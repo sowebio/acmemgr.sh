@@ -1,0 +1,31 @@
+#----------------------------------------------------------------------------
+# ACMEMGR.SH : an ACME.SH manager using DNS-01 issued LETSENCRYPT certificates
+#
+# HOST_NAME.certops - Distant certificates files operations for Mailcow
+#----------------------------------------------------------------------------
+
+# Name matching             Variables     ACME with DNS-01                                   MAILCOW 
+# ----------------------------------------------------------------------------------------------------
+# Certificate private key : DOMAIN_KEY  : /etc/acme/certs/<domain_name>/<domain_name>.key <> key.pem
+# Full chain certs        : DOMAIN_CERT : /etc/acme/certs/<domain_name>/fullchain.cer     <> cert.pem
+
+if [ "${DOMAIN_STATUS:0:7}" == "${DOMAIN_STATUS_DELETING:0:7}" ]; then
+
+  # Delete domain name key file key.pem and certificate file cert.pem in {HOST_FQDN}:/var/lib/docker/containers/mailcow-dockerized/data/assets/ssl/
+
+  ssh -p ${HOST_PORT} ${HOST_LOGIN}@${HOST_FQDN} "rm /var/lib/docker/containers/mailcow-dockerized/data/assets/ssl/key.pem /var/lib/docker/containers/mailcow-dockerized/data/assets/ssl/cert.pem"
+
+else
+
+  cp ${DOMAIN_CERT} ${CERT_DIR}/cert.pem
+  cp ${DOMAIN_KEY} ${CERT_DIR}/key.pem
+
+  # Copy Files ${CERT_DIR}/key.pem and ${CERT_DIR}/cert.pem to {HOST_FQDN}:/var/lib/docker/containers/mailcow-dockerized/data/assets/ssl/
+
+  scp -P ${HOST_PORT} ${CERT_DIR}/key.pem ${CERT_DIR}/cert.pem ${HOST_LOGIN}@${HOST_FQDN}:/var/lib/docker/containers/mailcow-dockerized/data/assets/ssl/
+
+fi
+
+#----------------------------------------------------------------------------
+# EOF
+#----------------------------------------------------------------------------

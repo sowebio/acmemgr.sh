@@ -1,0 +1,918 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<meta name="GENERATOR" content="GNU source-highlight 3.1.8
+by Lorenzo Bettini
+http://www.lorenzobettini.it
+http://www.gnu.org/software/src-highlite">
+<title>acmemgr.sh</title>
+</head>
+<body style="background-color:white">
+<pre><span style="color:#000000">001:</span> <i><span style="color:#9A1900">#!/bin/bash</span></i>
+<span style="color:#000000">002:</span> <i><span style="color:#9A1900">#-------------------------------------------------------------------------------</span></i>
+<span style="color:#000000">003:</span> <i><span style="color:#9A1900"># ACMEMGR.SH : an ACME.SH manager using DNS-01 protocol</span></i>
+<span style="color:#000000">004:</span> <i><span style="color:#9A1900">#</span></i>
+<span style="color:#000000">005:</span> <i><span style="color:#9A1900"># acmemgr.sh - main program</span></i>
+<span style="color:#000000">006:</span> <i><span style="color:#9A1900">#-------------------------------------------------------------------------------</span></i>
+<span style="color:#000000">007:</span> <i><span style="color:#9A1900">#</span></i>
+<span style="color:#000000">008:</span> <i><span style="color:#9A1900"># See README.md for documentation, versions and history</span></i>
+<span style="color:#000000">009:</span> <i><span style="color:#9A1900">#</span></i>
+<span style="color:#000000">010:</span> <i><span style="color:#9A1900"># Author(s)</span></i>
+<span style="color:#000000">011:</span> <i><span style="color:#9A1900">#</span></i>
+<span style="color:#000000">012:</span> <i><span style="color:#9A1900"># Stephane Riviere - stef[@|.]genesix.org for https://soweb.io SARL - FRANCE</span></i>
+<span style="color:#000000">013:</span> <i><span style="color:#9A1900">#</span></i>
+<span style="color:#000000">014:</span> <i><span style="color:#9A1900"># This program is licenced GPLv3 or greater.</span></i>
+<span style="color:#000000">015:</span> <i><span style="color:#9A1900">#</span></i>
+<span style="color:#000000">016:</span> <i><span style="color:#9A1900">#-------------------------------------------------------------------------------</span></i>
+<span style="color:#000000">017:</span> <i><span style="color:#9A1900">#</span></i>
+<span style="color:#000000">018:</span> <i><span style="color:#9A1900"># Variables names should be consistent and understandable</span></i>
+<span style="color:#000000">019:</span> <i><span style="color:#9A1900">#</span></i>
+<span style="color:#000000">020:</span> <i><span style="color:#9A1900"># ..._DIR  : contains ready to use directory path</span></i>
+<span style="color:#000000">021:</span> <i><span style="color:#9A1900"># ..._ROOT : contains the base of a path to build</span></i>
+<span style="color:#000000">022:</span> <i><span style="color:#9A1900"># ..._FILE : contains fully qualified file name (with path)</span></i>
+<span style="color:#000000">023:</span> <i><span style="color:#9A1900">#</span></i>
+<span style="color:#000000">024:</span> <i><span style="color:#9A1900">#-------------------------------------------------------------------------------</span></i>
+<span style="color:#000000">025:</span> 
+<span style="color:#000000">026:</span> <i><span style="color:#9A1900">#-------------------------------------------------------------------------------</span></i>
+<span style="color:#000000">027:</span> <i><span style="color:#9A1900"># Initialize</span></i>
+<span style="color:#000000">028:</span> <i><span style="color:#9A1900">#-------------------------------------------------------------------------------</span></i>
+<span style="color:#000000">029:</span> 
+<span style="color:#000000">030:</span> <span style="color:#009900">MANAGER_DEBUG</span><span style="color:#990000">=</span><span style="color:#FF0000">"false"</span>
+<span style="color:#000000">031:</span> <span style="color:#009900">MANAGER_VERSION</span><span style="color:#990000">=</span><span style="color:#FF0000">"1.0"</span>
+<span style="color:#000000">032:</span> <span style="color:#009900">MANAGER_NAME</span><span style="color:#990000">=</span><span style="color:#FF0000">"acmemgr"</span>
+<span style="color:#000000">033:</span> <span style="color:#009900">ACME_NAME</span><span style="color:#990000">=</span><span style="color:#FF0000">"acme"</span>
+<span style="color:#000000">034:</span> 
+<span style="color:#000000">035:</span> <span style="color:#009900">ETC_DIR</span><span style="color:#990000">=</span><span style="color:#FF0000">"/etc/${ACME_NAME}"</span>
+<span style="color:#000000">036:</span> <span style="color:#009900">DB_FILE</span><span style="color:#990000">=</span><span style="color:#FF0000">"${ETC_DIR}/${MANAGER_NAME}.db"</span>
+<span style="color:#000000">037:</span> <span style="color:#009900">LOG_ACME_ROOT</span><span style="color:#990000">=</span><span style="color:#FF0000">"/var/log/${ACME_NAME}"</span>
+<span style="color:#000000">038:</span> <span style="color:#009900">LOG_MANAGER_FILE</span><span style="color:#990000">=</span><span style="color:#FF0000">"${LOG_ACME_ROOT}/${MANAGER_NAME}.log"</span> 
+<span style="color:#000000">039:</span> 
+<span style="color:#000000">040:</span> <i><span style="color:#9A1900">#-------------------------------------------------------------------------------</span></i>
+<span style="color:#000000">041:</span> <i><span style="color:#9A1900"># Service functions</span></i>
+<span style="color:#000000">042:</span> <i><span style="color:#9A1900">#-------------------------------------------------------------------------------</span></i>
+<span style="color:#000000">043:</span> 
+<span style="color:#000000">044:</span> <i><span style="color:#9A1900">#-------------------------------------------------------------------------------</span></i>
+<span style="color:#000000">045:</span> <b><span style="color:#000000">function dynvar()</span></b>
+<span style="color:#000000">046:</span> <i><span style="color:#9A1900">#-------------------------------------------------------------------------------</span></i>
+<span style="color:#000000">047:</span> <i><span style="color:#9A1900"># Description : Assign or read a dynamic variable</span></i>
+<span style="color:#000000">048:</span> <i><span style="color:#9A1900"># Arguments   : ${1} suffix name part (alphanumeric, hyphen and underscore only)</span></i>
+<span style="color:#000000">049:</span> <i><span style="color:#9A1900">#               ${2} value (if declare assign, read if missing)</span></i>
+<span style="color:#000000">050:</span> <i><span style="color:#9A1900"># Return      : value=$(dynvar("suffix_name_part")</span></i>
+<span style="color:#000000">051:</span> <i><span style="color:#9A1900">#-------------------------------------------------------------------------------</span></i>
+<span style="color:#000000">052:</span> {
+<span style="color:#000000">053:</span>   <b><span style="color:#0000FF">local</span></b> <span style="color:#009900">TMP_DYNVAR_SUFFIX</span><span style="color:#990000">=</span><span style="color:#009900">$(</span>tr <span style="color:#FF0000">'[a-z]'</span> <span style="color:#FF0000">'[A-Z]'</span><span style="color:#990000">&lt;&lt;&lt;</span> <span style="color:#009900">${1}</span><span style="color:#990000">)</span> <i><span style="color:#9A1900"># Upper case for name consistency</span></i>
+<span style="color:#000000">054:</span>   <b><span style="color:#0000FF">local</span></b> <span style="color:#009900">TMP_VAR</span><span style="color:#990000">=</span><span style="color:#FF0000">""</span>
+<span style="color:#000000">055:</span> 
+<span style="color:#000000">056:</span>   <i><span style="color:#9A1900"># If ${2} is unset</span></i>
+<span style="color:#000000">057:</span>   <b><span style="color:#0000FF">if</span></b> <span style="color:#990000">[</span> -n <span style="color:#009900">${2+x}</span> <span style="color:#990000">];</span> <b><span style="color:#0000FF">then</span></b>
+<span style="color:#000000">058:</span>     <i><span style="color:#9A1900"># Declare</span></i>
+<span style="color:#000000">059:</span>     <b><span style="color:#0000FF">declare</span></b> DYNVAR_<span style="color:#009900">${DYNVAR_SUFFIX}="${2}</span><span style="color:#FF0000">" # Create dynamic variable</span>
+<span style="color:#000000">060:</span> <span style="color:#FF0000">  else</span>
+<span style="color:#000000">061:</span> <span style="color:#FF0000">    # Read (previous declaration is not tested)</span>
+<span style="color:#000000">062:</span> <span style="color:#FF0000">    echo "</span><span style="color:#009900">$(TMP_VAR</span><span style="color:#990000">=</span>DYNVAR_<span style="color:#009900">${TMP_DYNVAR_SUFFIX}</span> <span style="color:#990000">&amp;&amp;</span> echo <span style="color:#009900">${!TMP_VAR}</span><span style="color:#990000">)</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">063:</span> <span style="color:#FF0000">  fi</span>
+<span style="color:#000000">064:</span> 
+<span style="color:#000000">065:</span> <span style="color:#FF0000">  log_dbg ""</span>
+<span style="color:#000000">066:</span> <span style="color:#FF0000">  log_dbg "</span>DYNVAR_NAME     <span style="color:#990000">:</span> DYNVAR_<span style="color:#009900">${TMP_DYNVAR_SUFFIX}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">067:</span> <span style="color:#FF0000">  log_dbg "</span>DYNVAR_CONTENT  <span style="color:#990000">:</span> <span style="color:#009900">$(TMP_VAR</span><span style="color:#990000">=</span>DYNVAR_<span style="color:#009900">${TMP_DYNVAR_SUFFIX}</span> <span style="color:#990000">&amp;&amp;</span> echo <span style="color:#009900">${!TMP_VAR}</span><span style="color:#990000">)</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">068:</span> <span style="color:#FF0000">  log_dbg ""</span>
+<span style="color:#000000">069:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">070:</span> 
+<span style="color:#000000">071:</span> <span style="color:#FF0000">#  declare EXEC_COPY_${DYNVAR_NAME}="</span><span style="color:#009900">${HOST_NAME}</span><span style="color:#990000">.</span>copy<span style="color:#FF0000">" # Create dynamic variable</span>
+<span style="color:#000000">072:</span> <span style="color:#FF0000">#  log_dbg "</span>DYNVAR_NAME     <span style="color:#990000">:</span> EXEC_COPY_<span style="color:#009900">${DYNVAR_NAME}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">073:</span> <span style="color:#FF0000">#  log_dbg "</span>DYNVAR_CONTENT  <span style="color:#990000">:</span> <span style="color:#009900">$(TMP_VAR</span><span style="color:#990000">=</span>EXEC_COPY_<span style="color:#009900">${DYNVAR_NAME}</span> <span style="color:#990000">&amp;&amp;</span> echo <span style="color:#009900">${!TMP_VAR}</span><span style="color:#990000">)</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">074:</span> 
+<span style="color:#000000">075:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">076:</span> <span style="color:#FF0000">function pause()</span>
+<span style="color:#000000">077:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">078:</span> <span style="color:#FF0000"># Description : Pause with message "</span>Press a key to <b><span style="color:#0000FF">continue</span></b><span style="color:#990000">...</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">079:</span> <span style="color:#FF0000"># Arguments   :</span>
+<span style="color:#000000">080:</span> <span style="color:#FF0000"># Return      :</span>
+<span style="color:#000000">081:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">082:</span> <span style="color:#FF0000">{</span>
+<span style="color:#000000">083:</span> <span style="color:#FF0000">read -n1 -r -p "</span>Press a key to <b><span style="color:#0000FF">continue</span></b><span style="color:#990000">...</span><span style="color:#FF0000">" key</span>
+<span style="color:#000000">084:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">085:</span> 
+<span style="color:#000000">086:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">087:</span> <span style="color:#FF0000">function log_msg()</span>
+<span style="color:#000000">088:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">089:</span> <span style="color:#FF0000"># Description : Display and log message</span>
+<span style="color:#000000">090:</span> <span style="color:#FF0000"># Arguments   : ${1} message</span>
+<span style="color:#000000">091:</span> <span style="color:#FF0000"># Return      :</span>
+<span style="color:#000000">092:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">093:</span> <span style="color:#FF0000">{</span>
+<span style="color:#000000">094:</span> <span style="color:#FF0000">  IFS="</span>§<span style="color:#FF0000">" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming</span>
+<span style="color:#000000">095:</span> 
+<span style="color:#000000">096:</span> <span style="color:#FF0000">  local LOG_MSG_STRING="</span><span style="color:#990000">[</span><span style="color:#009900">$(</span>date <span style="color:#009900">${LOG_TIMESTAMP}</span><span style="color:#990000">)]</span> - <span style="color:#009900">${TASK_NAME}</span> - MESSAGE - <span style="color:#009900">${1}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">097:</span> <span style="color:#FF0000">  echo ${LOG_MSG_STRING}</span>
+<span style="color:#000000">098:</span> <span style="color:#FF0000">  echo ${LOG_MSG_STRING} &gt;&gt; "</span><span style="color:#009900">${LOG_MANAGER_FILE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">099:</span> 
+<span style="color:#000000">100:</span> <span style="color:#FF0000">  unset IFS # Restore IFS to default space, tab &amp; newline</span>
+<span style="color:#000000">101:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">102:</span> 
+<span style="color:#000000">103:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">104:</span> <span style="color:#FF0000">function log_dbg()</span>
+<span style="color:#000000">105:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">106:</span> <span style="color:#FF0000"># Description : Display and log debug message</span>
+<span style="color:#000000">107:</span> <span style="color:#FF0000"># Arguments   : ${1} message</span>
+<span style="color:#000000">108:</span> <span style="color:#FF0000"># Return      :</span>
+<span style="color:#000000">109:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">110:</span> <span style="color:#FF0000">{</span>
+<span style="color:#000000">111:</span> <span style="color:#FF0000"> if [ "</span><span style="color:#009900">${MANAGER_DEBUG}</span><span style="color:#FF0000">" = "</span><b><span style="color:#0000FF">true</span></b><span style="color:#FF0000">" ]; then</span>
+<span style="color:#000000">112:</span> 
+<span style="color:#000000">113:</span> <span style="color:#FF0000">    IFS="</span>§<span style="color:#FF0000">" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming</span>
+<span style="color:#000000">114:</span> 
+<span style="color:#000000">115:</span> <span style="color:#FF0000">    local LOG_MSG_STRING="</span><span style="color:#990000">[</span><span style="color:#009900">$(</span>date <span style="color:#009900">${LOG_TIMESTAMP}</span><span style="color:#990000">)]</span> - <span style="color:#009900">${TASK_NAME}</span> - DEBUG   - <span style="color:#009900">${1}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">116:</span> <span style="color:#FF0000">    echo ${LOG_MSG_STRING}</span>
+<span style="color:#000000">117:</span> <span style="color:#FF0000">    echo ${LOG_MSG_STRING} &gt;&gt; "</span><span style="color:#009900">${LOG_MANAGER_FILE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">118:</span> 
+<span style="color:#000000">119:</span> <span style="color:#FF0000">    unset IFS # Restore IFS to default space, tab &amp; newline</span>
+<span style="color:#000000">120:</span> <span style="color:#FF0000"> fi</span>
+<span style="color:#000000">121:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">122:</span> 
+<span style="color:#000000">123:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">124:</span> <span style="color:#FF0000">function log_err()</span>
+<span style="color:#000000">125:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">126:</span> <span style="color:#FF0000"># Description : Display and log error message</span>
+<span style="color:#000000">127:</span> <span style="color:#FF0000"># Arguments   : ${1} message</span>
+<span style="color:#000000">128:</span> <span style="color:#FF0000"># Return      :</span>
+<span style="color:#000000">129:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">130:</span> <span style="color:#FF0000">{</span>
+<span style="color:#000000">131:</span> <span style="color:#FF0000">  IFS="</span>§<span style="color:#FF0000">" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming</span>
+<span style="color:#000000">132:</span> 
+<span style="color:#000000">133:</span> <span style="color:#FF0000">  local LOG_MSG_STRING="</span><span style="color:#990000">[</span><span style="color:#009900">$(</span>date <span style="color:#009900">${LOG_TIMESTAMP}</span><span style="color:#990000">)]</span> - <span style="color:#009900">${TASK_NAME}</span> - ERROR   - <span style="color:#009900">${1}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">134:</span> <span style="color:#FF0000">  echo ${LOG_MSG_STRING}</span>
+<span style="color:#000000">135:</span> <span style="color:#FF0000">  echo ${LOG_MSG_STRING} &gt;&gt; "</span><span style="color:#009900">${LOG_MANAGER_FILE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">136:</span> 
+<span style="color:#000000">137:</span> <span style="color:#FF0000">  unset IFS  # Restore IFS to default space, tab &amp; newline</span>
+<span style="color:#000000">138:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">139:</span> 
+<span style="color:#000000">140:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">141:</span> <span style="color:#FF0000">function mail_msg()</span>
+<span style="color:#000000">142:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">143:</span> <span style="color:#FF0000"># Description : log &amp; mail message</span>
+<span style="color:#000000">144:</span> <span style="color:#FF0000"># Arguments   : ${1} : msg class, example: ${HOST_NAME}</span>
+<span style="color:#000000">145:</span> <span style="color:#FF0000">#               ${2} : subject, example: "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has been created<span style="color:#FF0000">"</span>
+<span style="color:#000000">146:</span> <span style="color:#FF0000">#               ${3} : body, example: "</span>Expire <span style="color:#990000">:</span><span style="color:#009900">${CERT_EXPIRE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">147:</span> <span style="color:#FF0000"># Return      :</span>
+<span style="color:#000000">148:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">149:</span> <span style="color:#FF0000">{</span>
+<span style="color:#000000">150:</span> <span style="color:#FF0000">  local ARG_2_STRIPPED=$(tr '</span><span style="color:#CC33CC">\n</span><span style="color:#FF0000">' ' '&lt;&lt;&lt; ${2})</span>
+<span style="color:#000000">151:</span> <span style="color:#FF0000">  local ARG_3_STRIPPED=$(tr '</span><span style="color:#CC33CC">\n</span><span style="color:#FF0000">' ' '&lt;&lt;&lt; ${3})</span>
+<span style="color:#000000">152:</span> <span style="color:#FF0000">  log_msg "</span><span style="color:#009900">${1}</span> - <span style="color:#009900">${ARG_2_STRIPPED}</span> <span style="color:#009900">${ARG_3_STRIPPED}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">153:</span> 
+<span style="color:#000000">154:</span> <span style="color:#FF0000">  echo -e "</span><span style="color:#009900">${3}</span><span style="color:#990000">\</span>n<span style="color:#FF0000">" | mail -a "</span>Content-Type<span style="color:#990000">:</span> text/plain<span style="color:#990000">;</span> <span style="color:#009900">charset</span><span style="color:#990000">=</span>UTF-<span style="color:#993399">8</span><span style="color:#FF0000">" -s "</span><span style="color:#990000">[</span><span style="color:#009900">${MANAGER_NAME}</span><span style="color:#990000">]</span> <span style="color:#009900">${1}</span> - Message <span style="color:#990000">:</span> <span style="color:#009900">${2}</span><span style="color:#FF0000">" ${ACCOUNT_EMAIL}</span>
+<span style="color:#000000">155:</span> <span style="color:#FF0000">  log_msg "</span><span style="color:#009900">${LOCAL_HOST}</span> - Wait <span style="color:#993399">2</span> s <b><span style="color:#0000FF">for</span></b> mail sorting <b><span style="color:#0000FF">in</span></b> MUA<span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">156:</span> <span style="color:#FF0000">  sleep 2</span>
+<span style="color:#000000">157:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">158:</span> 
+<span style="color:#000000">159:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">160:</span> <span style="color:#FF0000">function mail_err()</span>
+<span style="color:#000000">161:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">162:</span> <span style="color:#FF0000"># Description : log &amp; mail error message</span>
+<span style="color:#000000">163:</span> <span style="color:#FF0000"># Arguments   : ${1} : class, example: ${HOST_NAME}</span>
+<span style="color:#000000">164:</span> <span style="color:#FF0000">#               ${2} : subject, example: "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has not been created<span style="color:#FF0000">"</span>
+<span style="color:#000000">165:</span> <span style="color:#FF0000">#               ${3} : body, example: "</span>Error code <span style="color:#990000">:</span> <span style="color:#009900">${ACME_RETURN_CODE}</span><span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">166:</span> <span style="color:#FF0000"># Return      : </span>
+<span style="color:#000000">167:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">168:</span> <span style="color:#FF0000">{</span>
+<span style="color:#000000">169:</span> <span style="color:#FF0000">  local ARG_2_STRIPPED=$(tr '</span><span style="color:#CC33CC">\n</span><span style="color:#FF0000">' ' '&lt;&lt;&lt; ${2})</span>
+<span style="color:#000000">170:</span> <span style="color:#FF0000">  local ARG_3_STRIPPED=$(tr '</span><span style="color:#CC33CC">\n</span><span style="color:#FF0000">' ' '&lt;&lt;&lt; ${3})</span>
+<span style="color:#000000">171:</span> <span style="color:#FF0000">  log_err "</span><span style="color:#009900">${1}</span> - <span style="color:#009900">${ARG_2_STRIPPED}</span> <span style="color:#009900">${ARG_3_STRIPPED}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">172:</span> 
+<span style="color:#000000">173:</span> <span style="color:#FF0000">  echo -e "</span><span style="color:#009900">${3}</span><span style="color:#990000">\</span>n<span style="color:#FF0000">" | mail -a "</span>Content-Type<span style="color:#990000">:</span> text/plain<span style="color:#990000">;</span> <span style="color:#009900">charset</span><span style="color:#990000">=</span>UTF-<span style="color:#993399">8</span><span style="color:#FF0000">" -s "</span><span style="color:#990000">[</span><span style="color:#009900">${MANAGER_NAME}</span><span style="color:#990000">]</span> <span style="color:#009900">${1}</span> - Error <span style="color:#990000">:</span> <span style="color:#009900">${2}</span><span style="color:#FF0000">" ${ACCOUNT_EMAIL}</span>
+<span style="color:#000000">174:</span> <span style="color:#FF0000">  log_msg "</span><span style="color:#009900">${LOCAL_HOST}</span> - Wait <span style="color:#993399">2</span> s <b><span style="color:#0000FF">for</span></b> mail sorting <b><span style="color:#0000FF">in</span></b> MUA<span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">175:</span> <span style="color:#FF0000">  sleep 2</span>
+<span style="color:#000000">176:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">177:</span> 
+<span style="color:#000000">178:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">179:</span> <span style="color:#FF0000">function pad_string()</span>
+<span style="color:#000000">180:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">181:</span> <span style="color:#FF0000"># Description : Display status</span>
+<span style="color:#000000">182:</span> <span style="color:#FF0000"># Arguments   : ${1] : String to pad</span>
+<span style="color:#000000">183:</span> <span style="color:#FF0000">#               ${2] : Pad width</span>
+<span style="color:#000000">184:</span> <span style="color:#FF0000"># Return      : Padded string </span>
+<span style="color:#000000">185:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">186:</span> <span style="color:#FF0000">{</span>
+<span style="color:#000000">187:</span> <span style="color:#FF0000">  IFS="</span>§<span style="color:#FF0000">" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming</span>
+<span style="color:#000000">188:</span> 
+<span style="color:#000000">189:</span> <span style="color:#FF0000">  local CPT=0</span>
+<span style="color:#000000">190:</span> <span style="color:#FF0000">  local SPC=""</span>
+<span style="color:#000000">191:</span> 
+<span style="color:#000000">192:</span> <span style="color:#FF0000">  while ((CPT&lt;${2}))</span>
+<span style="color:#000000">193:</span> <span style="color:#FF0000">  do</span>
+<span style="color:#000000">194:</span> <span style="color:#FF0000">         ((CPT+=1))</span>
+<span style="color:#000000">195:</span> <span style="color:#FF0000">     SPC="</span><span style="color:#009900">${SPC}</span> <span style="color:#FF0000">"</span>
+<span style="color:#000000">196:</span> <span style="color:#FF0000">  done</span>
+<span style="color:#000000">197:</span> 
+<span style="color:#000000">198:</span> <span style="color:#FF0000">  local TEXT_TO_PAD=${1}</span>
+<span style="color:#000000">199:</span> <span style="color:#FF0000">  local PADDED_TEXT="</span><span style="color:#009900">${TEXT_TO_PAD:0:${2}}${SPC:0:$((${2}</span> - <span style="color:#009900">${#TEXT_TO_PAD}))}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">200:</span> 
+<span style="color:#000000">201:</span> <span style="color:#FF0000">  echo "</span><span style="color:#009900">${PADDED_TEXT}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">202:</span> 
+<span style="color:#000000">203:</span> <span style="color:#FF0000">  unset IFS # Restore IFS to default space, tab &amp; newline    </span>
+<span style="color:#000000">204:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">205:</span> 
+<span style="color:#000000">206:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">207:</span> <span style="color:#FF0000">function remove_local_cert()</span>
+<span style="color:#000000">208:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">209:</span> <span style="color:#FF0000"># Description : Remove a certificates in local repository</span>
+<span style="color:#000000">210:</span> <span style="color:#FF0000"># Arguments   :</span>
+<span style="color:#000000">211:</span> <span style="color:#FF0000"># Return      :</span>
+<span style="color:#000000">212:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">213:</span> <span style="color:#FF0000">{</span>
+<span style="color:#000000">214:</span> <span style="color:#FF0000">  local RMDIR_RETURN_CODE="" </span>
+<span style="color:#000000">215:</span> 
+<span style="color:#000000">216:</span> <span style="color:#FF0000">  rm --force ${CERT_DIR}/${DOMAIN_NAME}.cer ${CERT_DIR}/${DOMAIN_NAME}.conf ${CERT_DIR}/${DOMAIN_NAME}.csr ${CERT_DIR}/${DOMAIN_NAME}.csr.conf ${CERT_DIR}/${DOMAIN_NAME}.key ${CERT_DIR}/${CERT_CA} ${CERT_DIR}/${CERT_FULLCHAIN}</span>
+<span style="color:#000000">217:</span> <span style="color:#FF0000">  # No error test because some files may not exist</span>
+<span style="color:#000000">218:</span> 
+<span style="color:#000000">219:</span> <span style="color:#FF0000">  rmdir ${CERT_DIR}</span>
+<span style="color:#000000">220:</span> <span style="color:#FF0000">  RMDIR_RETURN_CODE="</span><span style="color:#009900">${?}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">221:</span> 
+<span style="color:#000000">222:</span> <span style="color:#FF0000">  if [ ${RMDIR_RETURN_CODE} -eq 0 ]; then</span>
+<span style="color:#000000">223:</span> <span style="color:#FF0000">    mail_msg ${LOCAL_HOST} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has been locally deleted<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Success<span style="color:#FF0000">"</span>
+<span style="color:#000000">224:</span> <span style="color:#FF0000">  else</span>
+<span style="color:#000000">225:</span> <span style="color:#FF0000">    mail_err ${LOCAL_HOST} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has not been locally deleted<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error code <span style="color:#990000">:</span> <span style="color:#009900">${RMDIR_RETURN_CODE}</span><span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">226:</span> <span style="color:#FF0000">  fi</span>
+<span style="color:#000000">227:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">228:</span> 
+<span style="color:#000000">229:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">230:</span> <span style="color:#FF0000">function certops_exec()</span>
+<span style="color:#000000">231:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">232:</span> <span style="color:#FF0000"># Description : Exec certops (Certificate files operations)</span>
+<span style="color:#000000">233:</span> <span style="color:#FF0000"># Arguments   :</span>
+<span style="color:#000000">234:</span> <span style="color:#FF0000"># Return      : Error code (0=success)</span>
+<span style="color:#000000">235:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">236:</span> <span style="color:#FF0000">{</span>
+<span style="color:#000000">237:</span> <span style="color:#FF0000">  IFS="</span>§<span style="color:#FF0000">" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming</span>
+<span style="color:#000000">238:</span> <span style="color:#FF0000">  source "</span><span style="color:#009900">${CERTOPS_FILE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">239:</span> <span style="color:#FF0000">  echo "</span><span style="color:#009900">${?}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">240:</span> <span style="color:#FF0000">  unset IFS # Restore IFS to default space, tab &amp; newline    </span>
+<span style="color:#000000">241:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">242:</span> 
+<span style="color:#000000">243:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">244:</span> <span style="color:#FF0000">function create_process()</span>
+<span style="color:#000000">245:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">246:</span> <span style="color:#FF0000"># Description : Issue a certificate</span>
+<span style="color:#000000">247:</span> <span style="color:#FF0000"># Arguments   :</span>
+<span style="color:#000000">248:</span> <span style="color:#FF0000"># Return      :</span>
+<span style="color:#000000">249:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">250:</span> <span style="color:#FF0000">{</span>
+<span style="color:#000000">251:</span> <span style="color:#FF0000">  local DOMAIN_CERT_EXPIRE=""</span>
+<span style="color:#000000">252:</span> <span style="color:#FF0000">  local ACME_COMMAND=""</span>
+<span style="color:#000000">253:</span> <span style="color:#FF0000">  local ACME_RETURN_CODE=""</span>
+<span style="color:#000000">254:</span> <span style="color:#FF0000">  local CERTOPS_RETURN_CODE=""  </span>
+<span style="color:#000000">255:</span> <span style="color:#FF0000">  local DB_UPDATE_DATE=""  </span>
+<span style="color:#000000">256:</span> <span style="color:#FF0000">  local DB_UPDATE_COMMAND=""</span>
+<span style="color:#000000">257:</span> <span style="color:#FF0000">  local DB_UPDATE_RETURN_CODE=""  </span>
+<span style="color:#000000">258:</span> 
+<span style="color:#000000">259:</span> <span style="color:#FF0000">  # Test if DOMAIN_STATUS is not RENEWED, DELETING or DELETED </span>
+<span style="color:#000000">260:</span> <span style="color:#FF0000">  if [ "</span><span style="color:#009900">${DOMAIN_STATUS}</span><span style="color:#FF0000">" == "</span><span style="color:#009900">${NULL_VALUE}</span><span style="color:#FF0000">" ]; then</span>
+<span style="color:#000000">261:</span> 
+<span style="color:#000000">262:</span> <span style="color:#FF0000">    # Test if "</span>/etc/acme/certs/DOMAIN_NAME/DOMAIN_NAME<span style="color:#990000">.</span>cer<span style="color:#FF0000">" file does not exist (consistency check - if script was interrupted, the directory could exist with some others files)</span>
+<span style="color:#000000">263:</span> <span style="color:#FF0000">    if [ ! -f "</span><span style="color:#009900">${CERT_DIR}/${DOMAIN_NAME}</span><span style="color:#990000">.</span>cer<span style="color:#FF0000">" ];then</span>
+<span style="color:#000000">264:</span> 
+<span style="color:#000000">265:</span> <span style="color:#FF0000">      # Test if "</span>/etc/acme/certs/DOMAIN_NAME<span style="color:#FF0000">" directory exist (consistency check - if script was interrupted, the directory must be deleted for resync)</span>
+<span style="color:#000000">266:</span> <span style="color:#FF0000">      if [ -d "</span><span style="color:#009900">${CERT_DIR}</span><span style="color:#FF0000">" ];then</span>
+<span style="color:#000000">267:</span> <span style="color:#FF0000">         remove_local_cert</span>
+<span style="color:#000000">268:</span> <span style="color:#FF0000">      fi  </span>
+<span style="color:#000000">269:</span> 
+<span style="color:#000000">270:</span> <span style="color:#FF0000">      # /usr/local/bin/acme.sh --home /etc/acme/&lt;account_name&gt; --config-home /etc/acme/&lt;account_name&gt; --cert-home &lt;cert_home&gt; --dns &lt;account_dns01&gt; --issue --domain &lt;domain_name&gt;</span>
+<span style="color:#000000">271:</span> <span style="color:#FF0000">      ACME_COMMAND="</span><span style="color:#009900">${ACME_NAME}</span><span style="color:#990000">.</span>sh --home <span style="color:#009900">${HOME_DIR}</span> --config-home <span style="color:#009900">${HOME_DIR}</span> --cert-home <span style="color:#009900">${CERT_HOME}</span> --log <span style="color:#009900">${LOG_ACME_ROOT}/${ACCOUNT_NAME}</span><span style="color:#990000">.</span>log --dns <span style="color:#009900">${ACCOUNT_DNS01}</span> --issue --domain <span style="color:#009900">${DOMAIN_NAME}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">272:</span> 
+<span style="color:#000000">273:</span> <span style="color:#FF0000">      # A domain name beginning by "</span><span style="color:#990000">[</span>www<span style="color:#990000">.]</span>domain<span style="color:#990000">.</span>tld<span style="color:#FF0000">" gets an extra "</span>domain<span style="color:#990000">.</span>tld<span style="color:#FF0000">" in certificate.</span>
+<span style="color:#000000">274:</span> <span style="color:#FF0000">      if [ "</span><span style="color:#009900">${DOMAIN_NAME:0:4}</span><span style="color:#FF0000">" == "</span>www<span style="color:#990000">.</span><span style="color:#FF0000">" ]; then</span>
+<span style="color:#000000">275:</span> <span style="color:#FF0000">         ACME_COMMAND="</span><span style="color:#009900">${ACME_COMMAND}</span> --domain <span style="color:#009900">${DOMAIN_NAME:4}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">276:</span> <span style="color:#FF0000">      fi</span>
+<span style="color:#000000">277:</span> 
+<span style="color:#000000">278:</span> <span style="color:#FF0000">      #--------------------------:</span>
+<span style="color:#000000">279:</span> <span style="color:#FF0000">      log_dbg "</span>ACME_COMMAND      <span style="color:#990000">:</span> <span style="color:#009900">${ACME_COMMAND}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">280:</span> 
+<span style="color:#000000">281:</span> <span style="color:#FF0000">      ${ACME_COMMAND}</span>
+<span style="color:#000000">282:</span> <span style="color:#FF0000">      ACME_RETURN_CODE="</span><span style="color:#009900">${?}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">283:</span> 
+<span style="color:#000000">284:</span> <span style="color:#FF0000">      if [ ${ACME_RETURN_CODE} -eq 0 ]; then</span>
+<span style="color:#000000">285:</span> 
+<span style="color:#000000">286:</span> <span style="color:#FF0000">        DOMAIN_CERT_EXPIRE=$(openssl x509 -dates -noout -in ${DOMAIN_CERT})</span>
+<span style="color:#000000">287:</span> <span style="color:#FF0000">        mail_msg ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has been created<span style="color:#990000">.</span><span style="color:#FF0000">" "</span><span style="color:#990000">\</span>nValidity period<span style="color:#990000">:\</span>n<span style="color:#009900">${DOMAIN_CERT_EXPIRE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">288:</span> 
+<span style="color:#000000">289:</span> <span style="color:#FF0000">        # Copy certificates - Execution of /etc/acme/&lt;host&gt;.certops content</span>
+<span style="color:#000000">290:</span> 
+<span style="color:#000000">291:</span> <span style="color:#FF0000">        CERTOPS_RETURN_CODE=$(certops_exec) </span>
+<span style="color:#000000">292:</span> 
+<span style="color:#000000">293:</span> <span style="color:#FF0000">        if [ ${CERTOPS_RETURN_CODE} -eq 0 ]; then</span>
+<span style="color:#000000">294:</span> <span style="color:#FF0000">          mail_msg ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has been successfuly copied<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Host is now tagged to service reload<span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">295:</span> 
+<span style="color:#000000">296:</span> <span style="color:#FF0000">          # Reload the server configuration</span>
+<span style="color:#000000">297:</span> <span style="color:#FF0000">          SERVICE_RESTART="</span><b><span style="color:#0000FF">true</span></b><span style="color:#FF0000">"</span>
+<span style="color:#000000">298:</span> 
+<span style="color:#000000">299:</span> <span style="color:#FF0000">          IFS="</span>§<span style="color:#FF0000">" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming</span>
+<span style="color:#000000">300:</span> 
+<span style="color:#000000">301:</span> <span style="color:#FF0000">          DB_UPDATE_DATE="</span><span style="color:#009900">$(</span>date <span style="color:#009900">${LOG_TIMESTAMP}</span><span style="color:#990000">)</span><span style="color:#FF0000">" </span>
+<span style="color:#000000">302:</span> 
+<span style="color:#000000">303:</span> <span style="color:#FF0000">          # Before : "</span>DOM_UNAME<span style="color:#990000">;</span>HOST_LOGIN<span style="color:#990000">;</span>HOST_FQDN<span style="color:#990000">,</span>HOST_PORT<span style="color:#990000">;</span>ACCOUNT_NAME<span style="color:#990000">;</span>SERVICE_NAME<span style="color:#990000">;</span>DOMAIN_NAME<span style="color:#FF0000">"</span>
+<span style="color:#000000">304:</span> <span style="color:#FF0000">          # After  : "</span>DOM_UNAME<span style="color:#990000">;</span>HOST_LOGIN<span style="color:#990000">;</span>HOST_FQDN<span style="color:#990000">,</span>HOST_PORT<span style="color:#990000">;</span>ACCOUNT_NAME<span style="color:#990000">;</span>SERVICE_NAME<span style="color:#990000">;</span>DOMAIN_NAME<span style="color:#990000">;</span>CREATED - lundi <span style="color:#993399">12</span> février <span style="color:#993399">2018</span><span style="color:#990000">,</span> <span style="color:#993399">11</span><span style="color:#990000">:</span><span style="color:#993399">47</span><span style="color:#990000">:</span><span style="color:#993399">46</span> <span style="color:#990000">(</span>UTC<span style="color:#990000">+</span><span style="color:#993399">0100</span><span style="color:#990000">)</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">305:</span> <span style="color:#FF0000">          DB_UPDATE_COMMAND="</span>s<span style="color:#990000">/</span><span style="color:#009900">${DOMAIN_NAME}/${DOMAIN_NAME};${DOMAIN_STATUS_CREATED}</span> - <span style="color:#009900">${DB_UPDATE_DATE}</span><span style="color:#990000">/</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">306:</span> 
+<span style="color:#000000">307:</span> <span style="color:#FF0000">          #--------------------------:</span>
+<span style="color:#000000">308:</span> <span style="color:#FF0000">          log_dbg "</span>DB_FILE_REP<span style="color:#990000">.</span>_CMD<span style="color:#990000">.</span> <span style="color:#990000">:</span> <span style="color:#009900">${DB_UPDATE_COMMAND}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">309:</span> 
+<span style="color:#000000">310:</span> <span style="color:#FF0000">          # When sed launched in bash, must use double quote instead of single quote</span>
+<span style="color:#000000">311:</span> <span style="color:#FF0000">          sed -i.bak "</span><span style="color:#009900">${DB_UPDATE_COMMAND}</span><span style="color:#FF0000">" ${DB_FILE}</span>
+<span style="color:#000000">312:</span> <span style="color:#FF0000">          DB_UPDATE_RETURN_CODE="</span><span style="color:#009900">${?}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">313:</span> 
+<span style="color:#000000">314:</span> <span style="color:#FF0000">          unset IFS # Restore IFS to default space, tab &amp; newline</span>
+<span style="color:#000000">315:</span> 
+<span style="color:#000000">316:</span> <span style="color:#FF0000">          if [ ${DB_UPDATE_RETURN_CODE} -eq 0 ]; then</span>
+<span style="color:#000000">317:</span> <span style="color:#FF0000">            mail_msg ${HOST_NAME} "</span>Domain <span style="color:#009900">${DOMAIN_NAME}</span> has been tagged CREATED<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Success<span style="color:#FF0000">"</span>
+<span style="color:#000000">318:</span> <span style="color:#FF0000">          else</span>
+<span style="color:#000000">319:</span> <span style="color:#FF0000">            mail_err ${HOST_NAME} "</span>Domain <span style="color:#009900">${DOMAIN_NAME}</span> has not been tagged CREATED<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error code <span style="color:#990000">:</span> <span style="color:#009900">${DB_UPDATE_RETURN_CODE}</span><span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">320:</span> <span style="color:#FF0000">          fi</span>
+<span style="color:#000000">321:</span> 
+<span style="color:#000000">322:</span> <span style="color:#FF0000">        else</span>
+<span style="color:#000000">323:</span> <span style="color:#FF0000">          mail_err ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has not been copyied<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error code <span style="color:#990000">:</span> <span style="color:#009900">${CERTOPS_RETURN_CODE}</span><span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">324:</span> <span style="color:#FF0000">        fi</span>
+<span style="color:#000000">325:</span> 
+<span style="color:#000000">326:</span> <span style="color:#FF0000">      else</span>
+<span style="color:#000000">327:</span> <span style="color:#FF0000">        mail_err ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has not been created<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error code <span style="color:#990000">:</span> <span style="color:#009900">${ACME_RETURN_CODE}</span><span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">328:</span> <span style="color:#FF0000">      fi</span>
+<span style="color:#000000">329:</span> <span style="color:#FF0000">    else</span>
+<span style="color:#000000">330:</span> <span style="color:#FF0000">       log_dbg "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> already exists<span style="color:#FF0000">"</span>
+<span style="color:#000000">331:</span> <span style="color:#FF0000">    fi</span>
+<span style="color:#000000">332:</span> <span style="color:#FF0000">  fi  </span>
+<span style="color:#000000">333:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">334:</span> 
+<span style="color:#000000">335:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">336:</span> <span style="color:#FF0000">function renew_process()</span>
+<span style="color:#000000">337:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">338:</span> <span style="color:#FF0000"># Description : Renew a certificate</span>
+<span style="color:#000000">339:</span> <span style="color:#FF0000"># Arguments   :</span>
+<span style="color:#000000">340:</span> <span style="color:#FF0000"># Return      :</span>
+<span style="color:#000000">341:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">342:</span> <span style="color:#FF0000">{</span>
+<span style="color:#000000">343:</span> <span style="color:#FF0000">  local DOMAIN_CHECK_4M=""</span>
+<span style="color:#000000">344:</span> <span style="color:#FF0000">  local DOMAIN_CHECK_1M=""</span>
+<span style="color:#000000">345:</span> <span style="color:#FF0000">  local DOMAIN_CHECK_COMMAND=""</span>
+<span style="color:#000000">346:</span> <span style="color:#FF0000">  local DOMAIN_CHECK_RETURN_CODE=""</span>
+<span style="color:#000000">347:</span> <span style="color:#FF0000">  local DOMAIN_CERT_EXPIRE=""</span>
+<span style="color:#000000">348:</span> <span style="color:#FF0000">  local CERTOPS_RETURN_CODE=""  </span>
+<span style="color:#000000">349:</span> <span style="color:#FF0000">  local DB_UPDATE_DATE=""  </span>
+<span style="color:#000000">350:</span> <span style="color:#FF0000">  local DB_UPDATE_COMMAND=""</span>
+<span style="color:#000000">351:</span> <span style="color:#FF0000">  local DB_UPDATE_RETURN_CODE=""    </span>
+<span style="color:#000000">352:</span> <span style="color:#FF0000">  local ACME_COMMAND=""</span>
+<span style="color:#000000">353:</span> <span style="color:#FF0000">  local ACME_RETURN_CODE=""  </span>
+<span style="color:#000000">354:</span> 
+<span style="color:#000000">355:</span> <span style="color:#FF0000">  # Test if DOMAIN_STATUS is CREATED or RENEWED</span>
+<span style="color:#000000">356:</span> <span style="color:#FF0000">  if [ "</span><span style="color:#009900">${DOMAIN_STATUS:0:7}</span><span style="color:#FF0000">" == "</span><span style="color:#009900">${DOMAIN_STATUS_CREATED:0:7}</span><span style="color:#FF0000">" ] ||</span>
+<span style="color:#000000">357:</span> <span style="color:#FF0000">     [ "</span><span style="color:#009900">${DOMAIN_STATUS:0:7}</span><span style="color:#FF0000">" == "</span><span style="color:#009900">${DOMAIN_STATUS_RENEWED:0:7}</span><span style="color:#FF0000">" ] ; then</span>
+<span style="color:#000000">358:</span> 
+<span style="color:#000000">359:</span> <span style="color:#FF0000">    # Test if certificate directory exist</span>
+<span style="color:#000000">360:</span> <span style="color:#FF0000">    if [ -d "</span><span style="color:#009900">${CERT_DIR}</span><span style="color:#FF0000">" ];then</span>
+<span style="color:#000000">361:</span> 
+<span style="color:#000000">362:</span> <span style="color:#FF0000">       # Force renew for tests purposes &gt; Invert commented lines :</span>
+<span style="color:#000000">363:</span> <span style="color:#FF0000">      # - DOMAIN_CHECK_COMMAND</span>
+<span style="color:#000000">364:</span> <span style="color:#FF0000">      # - ACME_COMMAND</span>
+<span style="color:#000000">365:</span> 
+<span style="color:#000000">366:</span> <span style="color:#FF0000">      DOMAIN_CHECK_4M="</span><span style="color:#993399">10368000</span><span style="color:#FF0000">" # Four monthes test (for else debugging)</span>
+<span style="color:#000000">367:</span> <span style="color:#FF0000">      DOMAIN_CHECK_1M="</span><span style="color:#993399">2592000</span><span style="color:#FF0000">"  # One month test</span>
+<span style="color:#000000">368:</span> 
+<span style="color:#000000">369:</span> <span style="color:#FF0000">     DOMAIN_CHECK_COMMAND="</span>openssl x509 -checkend <span style="color:#009900">${DOMAIN_CHECK_1M}</span> -noout -in <span style="color:#009900">${DOMAIN_CERT}</span><span style="color:#FF0000">" # NORMAL OPERATION</span>
+<span style="color:#000000">370:</span> <span style="color:#FF0000">     #DOMAIN_CHECK_COMMAND="</span>openssl x509 -checkend <span style="color:#009900">${DOMAIN_CHECK_4M}</span> -noout -in <span style="color:#009900">${DOMAIN_CERT}</span><span style="color:#FF0000">" # FORCE RENEW FOR TESTS PURPOSES</span>
+<span style="color:#000000">371:</span> 
+<span style="color:#000000">372:</span> <span style="color:#FF0000">      #--------------------------:</span>
+<span style="color:#000000">373:</span> <span style="color:#FF0000">      log_dbg "</span>DOMAIN_CHECK_CMD<span style="color:#990000">.</span> <span style="color:#990000">:</span> <span style="color:#009900">${DOMAIN_CHECK_COMMAND}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">374:</span> 
+<span style="color:#000000">375:</span> <span style="color:#FF0000">      ${DOMAIN_CHECK_COMMAND}</span>
+<span style="color:#000000">376:</span> <span style="color:#FF0000">      DOMAIN_CHECK_RETURN_CODE="</span><span style="color:#009900">${?}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">377:</span> 
+<span style="color:#000000">378:</span> <span style="color:#FF0000">      if [ ${DOMAIN_CHECK_RETURN_CODE} -eq 0 ]; then</span>
+<span style="color:#000000">379:</span> 
+<span style="color:#000000">380:</span> <span style="color:#FF0000">        DOMAIN_CERT_EXPIRE=$(openssl x509 -dates -noout -in ${DOMAIN_CERT})</span>
+<span style="color:#000000">381:</span> <span style="color:#FF0000">        mail_msg ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> is not to be renewed<span style="color:#990000">.</span><span style="color:#FF0000">" "</span><span style="color:#990000">\</span>nValidity period<span style="color:#990000">:\</span>n<span style="color:#009900">${DOMAIN_CERT_EXPIRE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">382:</span> 
+<span style="color:#000000">383:</span> <span style="color:#FF0000">      else</span>
+<span style="color:#000000">384:</span> <span style="color:#FF0000">  </span>
+<span style="color:#000000">385:</span> <span style="color:#FF0000">        DOMAIN_CERT_EXPIRE=$(openssl x509 -dates -noout -in ${DOMAIN_CERT})</span>
+<span style="color:#000000">386:</span> <span style="color:#FF0000">        mail_msg ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has to be renewed<span style="color:#990000">.</span><span style="color:#FF0000">" "</span><span style="color:#990000">\</span>nValidity period<span style="color:#990000">:\</span>n<span style="color:#009900">${DOMAIN_CERT_EXPIRE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">387:</span> 
+<span style="color:#000000">388:</span> <span style="color:#FF0000">        # /usr/local/bin/acme.sh --home /etc/acme/&lt;account_name&gt; --config-home /etc/acme/&lt;account_name&gt; --cert-home &lt;cert_home&gt; --dns &lt;account_dns01&gt; --renew --domain &lt;domain_name&gt;</span>
+<span style="color:#000000">389:</span> 
+<span style="color:#000000">390:</span> <span style="color:#FF0000">       ACME_COMMAND="</span><span style="color:#009900">${ACME_NAME}</span><span style="color:#990000">.</span>sh --home <span style="color:#009900">${HOME_DIR}</span> --config-home <span style="color:#009900">${HOME_DIR}</span> --cert-home <span style="color:#009900">${CERT_HOME}</span> --log <span style="color:#009900">${LOG_ACME_ROOT}/${ACCOUNT_NAME}</span><span style="color:#990000">.</span>log --dns <span style="color:#009900">${ACCOUNT_DNS01}</span> --renew --domain <span style="color:#009900">${DOMAIN_NAME}</span><span style="color:#FF0000">"         # NORMAL OPERATION</span>
+<span style="color:#000000">391:</span> <span style="color:#FF0000">       #ACME_COMMAND="</span><span style="color:#009900">${ACME_NAME}</span><span style="color:#990000">.</span>sh --home <span style="color:#009900">${HOME_DIR}</span> --config-home <span style="color:#009900">${HOME_DIR}</span> --cert-home <span style="color:#009900">${CERT_HOME}</span> --log <span style="color:#009900">${LOG_ACME_ROOT}/${ACCOUNT_NAME}</span><span style="color:#990000">.</span>log --dns <span style="color:#009900">${ACCOUNT_DNS01}</span> --force --renew --domain <span style="color:#009900">${DOMAIN_NAME}</span><span style="color:#FF0000">" # FORCE RENEW FOR TESTS PURPOSES</span>
+<span style="color:#000000">392:</span> 
+<span style="color:#000000">393:</span> <span style="color:#FF0000">        #--------------------------:</span>
+<span style="color:#000000">394:</span> <span style="color:#FF0000">        log_dbg "</span>ACME_COMMAND      <span style="color:#990000">:</span> <span style="color:#009900">${ACME_COMMAND}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">395:</span> 
+<span style="color:#000000">396:</span> <span style="color:#FF0000">        ${ACME_COMMAND}</span>
+<span style="color:#000000">397:</span> <span style="color:#FF0000">        ACME_RETURN_CODE="</span><span style="color:#009900">${?}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">398:</span> 
+<span style="color:#000000">399:</span> <span style="color:#FF0000">        if [ ${ACME_RETURN_CODE} -eq 0 ]; then</span>
+<span style="color:#000000">400:</span> 
+<span style="color:#000000">401:</span> <span style="color:#FF0000">          DOMAIN_CERT_EXPIRE=$(openssl x509 -dates -noout -in ${DOMAIN_CERT})</span>
+<span style="color:#000000">402:</span> <span style="color:#FF0000">          mail_msg ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has been renewed<span style="color:#990000">.</span><span style="color:#FF0000">" "</span><span style="color:#990000">\</span>nValidity period<span style="color:#990000">:\</span>n<span style="color:#009900">${DOMAIN_CERT_EXPIRE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">403:</span> 
+<span style="color:#000000">404:</span> <span style="color:#FF0000">          # Copy certificates - Execution of /etc/acme/&lt;host&gt;.certops content</span>
+<span style="color:#000000">405:</span> <span style="color:#FF0000"> </span>
+<span style="color:#000000">406:</span> <span style="color:#FF0000">          CERTOPS_RETURN_CODE=$(certops_exec)</span>
+<span style="color:#000000">407:</span> 
+<span style="color:#000000">408:</span> <span style="color:#FF0000">          if [ ${CERTOPS_RETURN_CODE} -eq 0 ]; then</span>
+<span style="color:#000000">409:</span> <span style="color:#FF0000">            mail_msg ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has been successfuly copied<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Host is now tagged to service reload<span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">410:</span> 
+<span style="color:#000000">411:</span> <span style="color:#FF0000">            # Reload the server configuration</span>
+<span style="color:#000000">412:</span> <span style="color:#FF0000">            SERVICE_RESTART="</span><b><span style="color:#0000FF">true</span></b><span style="color:#FF0000">"</span>
+<span style="color:#000000">413:</span> 
+<span style="color:#000000">414:</span> <span style="color:#FF0000">            IFS="</span>§<span style="color:#FF0000">" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming</span>
+<span style="color:#000000">415:</span> 
+<span style="color:#000000">416:</span> <span style="color:#FF0000">            DB_UPDATE_DATE="</span><span style="color:#009900">$(</span>date <span style="color:#009900">${LOG_TIMESTAMP}</span><span style="color:#990000">)</span><span style="color:#FF0000">" </span>
+<span style="color:#000000">417:</span> 
+<span style="color:#000000">418:</span> <span style="color:#FF0000">            # Before : "</span>DOM_UNAME<span style="color:#990000">;</span>HOST_LOGIN<span style="color:#990000">;</span>HOST_FQDN<span style="color:#990000">,</span>HOST_PORT<span style="color:#990000">;</span>ACCOUNT_NAME<span style="color:#990000">;</span>SERVICE_NAME<span style="color:#990000">;</span>DOMAIN_NAME<span style="color:#990000">;</span>CREATED <span style="color:#990000">||</span> RENEWED<span style="color:#FF0000">"</span>
+<span style="color:#000000">419:</span> <span style="color:#FF0000">            # After  : "</span>DOM_UNAME<span style="color:#990000">;</span>HOST_LOGIN<span style="color:#990000">;</span>HOST_FQDN<span style="color:#990000">,</span>HOST_PORT<span style="color:#990000">;</span>ACCOUNT_NAME<span style="color:#990000">;</span>SERVICE_NAME<span style="color:#990000">;</span>DOMAIN_NAME<span style="color:#990000">;</span>RENEWED - lundi <span style="color:#993399">12</span> février <span style="color:#993399">2018</span><span style="color:#990000">,</span> <span style="color:#993399">11</span><span style="color:#990000">:</span><span style="color:#993399">47</span><span style="color:#990000">:</span><span style="color:#993399">46</span> <span style="color:#990000">(</span>UTC<span style="color:#990000">+</span><span style="color:#993399">0100</span><span style="color:#990000">)</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">420:</span> <span style="color:#FF0000">            DB_UPDATE_COMMAND="</span>s<span style="color:#990000">/</span><span style="color:#009900">${DOMAIN_NAME};${DOMAIN_STATUS}/${DOMAIN_NAME};${DOMAIN_STATUS_RENEWED}</span> - <span style="color:#009900">${DB_UPDATE_DATE}</span><span style="color:#990000">/</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">421:</span> 
+<span style="color:#000000">422:</span> <span style="color:#FF0000">            #--------------------------:</span>
+<span style="color:#000000">423:</span> <span style="color:#FF0000">            log_dbg "</span>DB_FILE_REP<span style="color:#990000">.</span>_CMD<span style="color:#990000">.</span> <span style="color:#990000">:</span> <span style="color:#009900">${DB_UPDATE_COMMAND}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">424:</span> 
+<span style="color:#000000">425:</span> <span style="color:#FF0000">            # When sed launched in bash, must use double quote instead of single quote</span>
+<span style="color:#000000">426:</span> <span style="color:#FF0000">            sed -i.bak "</span><span style="color:#009900">${DB_UPDATE_COMMAND}</span><span style="color:#FF0000">" ${DB_FILE}</span>
+<span style="color:#000000">427:</span> <span style="color:#FF0000">            DB_UPDATE_RETURN_CODE="</span><span style="color:#009900">${?}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">428:</span> 
+<span style="color:#000000">429:</span> <span style="color:#FF0000">            unset IFS # Restore IFS to default space, tab &amp; newline</span>
+<span style="color:#000000">430:</span> 
+<span style="color:#000000">431:</span> <span style="color:#FF0000">            if [ ${DB_UPDATE_RETURN_CODE} -eq 0 ]; then</span>
+<span style="color:#000000">432:</span> <span style="color:#FF0000">              mail_msg ${HOST_NAME} "</span>Domain <span style="color:#009900">${DOMAIN_NAME}</span> has been tagged RENEWED<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Success<span style="color:#FF0000">"</span>
+<span style="color:#000000">433:</span> <span style="color:#FF0000">            else</span>
+<span style="color:#000000">434:</span> <span style="color:#FF0000">              mail_err ${HOST_NAME} "</span>Domain <span style="color:#009900">${DOMAIN_NAME}</span> has not been tagged RENEWED<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error code <span style="color:#990000">:</span> <span style="color:#009900">${DB_UPDATE_RETURN_CODE}</span><span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">435:</span> <span style="color:#FF0000">            fi</span>
+<span style="color:#000000">436:</span> 
+<span style="color:#000000">437:</span> <span style="color:#FF0000">          else</span>
+<span style="color:#000000">438:</span> <span style="color:#FF0000">            mail_err ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has not been copyied<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error code <span style="color:#990000">:</span> <span style="color:#009900">${CERTOPS_RETURN_CODE}</span><span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">439:</span> <span style="color:#FF0000">          fi</span>
+<span style="color:#000000">440:</span> 
+<span style="color:#000000">441:</span> <span style="color:#FF0000">        else</span>
+<span style="color:#000000">442:</span> <span style="color:#FF0000">          mail_err ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has not been renewed<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error code <span style="color:#990000">:</span> <span style="color:#009900">${ACME_RETURN_CODE}</span><span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">443:</span> <span style="color:#FF0000">        fi</span>
+<span style="color:#000000">444:</span> 
+<span style="color:#000000">445:</span> <span style="color:#FF0000">      fi</span>
+<span style="color:#000000">446:</span> 
+<span style="color:#000000">447:</span> <span style="color:#FF0000">    else</span>
+<span style="color:#000000">448:</span> <span style="color:#FF0000">       log_dbg "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> <b><span style="color:#0000FF">do</span></b> not exists<span style="color:#FF0000">"</span>
+<span style="color:#000000">449:</span> <span style="color:#FF0000">    fi</span>
+<span style="color:#000000">450:</span> 
+<span style="color:#000000">451:</span> <span style="color:#FF0000">  fi  </span>
+<span style="color:#000000">452:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">453:</span> 
+<span style="color:#000000">454:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">455:</span> <span style="color:#FF0000">function delete_process()</span>
+<span style="color:#000000">456:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">457:</span> <span style="color:#FF0000"># Description : Delete a certificate and revoke it</span>
+<span style="color:#000000">458:</span> <span style="color:#FF0000"># Arguments   :</span>
+<span style="color:#000000">459:</span> <span style="color:#FF0000"># Return      :</span>
+<span style="color:#000000">460:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">461:</span> <span style="color:#FF0000">{</span>
+<span style="color:#000000">462:</span> <span style="color:#FF0000">  local CERTOPS_RETURN_CODE=""  </span>
+<span style="color:#000000">463:</span> <span style="color:#FF0000">  local DB_UPDATE_DATE=""  </span>
+<span style="color:#000000">464:</span> <span style="color:#FF0000">  local DB_UPDATE_COMMAND=""</span>
+<span style="color:#000000">465:</span> <span style="color:#FF0000">  local DB_UPDATE_RETURN_CODE=""  </span>
+<span style="color:#000000">466:</span> <span style="color:#FF0000">  local ACME_COMMAND=""  </span>
+<span style="color:#000000">467:</span> <span style="color:#FF0000">  local ACME_RETURN_CODE="" </span>
+<span style="color:#000000">468:</span> 
+<span style="color:#000000">469:</span> <span style="color:#FF0000">  if [ "</span><span style="color:#009900">${DOMAIN_STATUS:0:7}</span><span style="color:#FF0000">" == "</span><span style="color:#009900">${DOMAIN_STATUS_DELETING:0:7}</span><span style="color:#FF0000">" ]; then</span>
+<span style="color:#000000">470:</span> 
+<span style="color:#000000">471:</span> <span style="color:#FF0000">    # Check if certificate directory exist</span>
+<span style="color:#000000">472:</span> <span style="color:#FF0000">    if [ -d "</span><span style="color:#009900">${CERT_DIR}</span><span style="color:#FF0000">" ];then</span>
+<span style="color:#000000">473:</span> 
+<span style="color:#000000">474:</span> <span style="color:#FF0000">      # We don't check if the directory contains the expected files because a previous script interruption could</span>
+<span style="color:#000000">475:</span> <span style="color:#FF0000">      # leave this directory in an undefined state. The right way is to erase the directory, whatever its contents.</span>
+<span style="color:#000000">476:</span> 
+<span style="color:#000000">477:</span> <span style="color:#FF0000">      CERTOPS_RETURN_CODE=$(certops_exec)</span>
+<span style="color:#000000">478:</span> 
+<span style="color:#000000">479:</span> <span style="color:#FF0000">      if [ ${CERTOPS_RETURN_CODE} -eq 0 ]; then</span>
+<span style="color:#000000">480:</span> <span style="color:#FF0000">        mail_msg ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has been successfuly deleted<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Host is now tagged to reload<span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">481:</span> 
+<span style="color:#000000">482:</span> <span style="color:#FF0000">        # Reload the server configuration</span>
+<span style="color:#000000">483:</span> <span style="color:#FF0000">        SERVICE_RESTART="</span><b><span style="color:#0000FF">true</span></b><span style="color:#FF0000">"</span>
+<span style="color:#000000">484:</span> 
+<span style="color:#000000">485:</span> <span style="color:#FF0000">        IFS="</span>§<span style="color:#FF0000">" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming</span>
+<span style="color:#000000">486:</span> 
+<span style="color:#000000">487:</span> <span style="color:#FF0000">        DB_UPDATE_DATE="</span><span style="color:#009900">$(</span>date <span style="color:#009900">${LOG_TIMESTAMP}</span><span style="color:#990000">)</span><span style="color:#FF0000">" </span>
+<span style="color:#000000">488:</span> 
+<span style="color:#000000">489:</span> <span style="color:#FF0000">        # Before : "</span>DOM_UNAME<span style="color:#990000">;</span>HOST_LOGIN<span style="color:#990000">;</span>HOST_FQDN<span style="color:#990000">,</span>HOST_PORT<span style="color:#990000">;</span>ACCOUNT_NAME<span style="color:#990000">;</span>SERVICE_NAME<span style="color:#990000">;</span>DOMAIN_NAME<span style="color:#990000">;</span>DELETING<span style="color:#FF0000">"</span>
+<span style="color:#000000">490:</span> <span style="color:#FF0000">        # After  : "</span>DOM_UNAME<span style="color:#990000">;</span>HOST_LOGIN<span style="color:#990000">;</span>HOST_FQDN<span style="color:#990000">,</span>HOST_PORT<span style="color:#990000">;</span>ACCOUNT_NAME<span style="color:#990000">;</span>SERVICE_NAME<span style="color:#990000">;</span>DOMAIN_NAME<span style="color:#990000">;</span>DELETED - lundi <span style="color:#993399">12</span> février <span style="color:#993399">2018</span><span style="color:#990000">,</span> <span style="color:#993399">11</span><span style="color:#990000">:</span><span style="color:#993399">47</span><span style="color:#990000">:</span><span style="color:#993399">46</span> <span style="color:#990000">(</span>UTC<span style="color:#990000">+</span><span style="color:#993399">0100</span><span style="color:#990000">)</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">491:</span> <span style="color:#FF0000">        DB_UPDATE_COMMAND="</span>s<span style="color:#990000">/</span><span style="color:#009900">${DOMAIN_NAME};${DOMAIN_STATUS}/${DOMAIN_NAME};${DOMAIN_STATUS_DELETED}</span> - <span style="color:#009900">${DB_UPDATE_DATE}</span><span style="color:#990000">/</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">492:</span> 
+<span style="color:#000000">493:</span> <span style="color:#FF0000">        #--------------------------:</span>
+<span style="color:#000000">494:</span> <span style="color:#FF0000">        log_dbg "</span>DB_FILE_REP<span style="color:#990000">.</span>_CMD<span style="color:#990000">.</span> <span style="color:#990000">:</span> <span style="color:#009900">${DB_UPDATE_COMMAND}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">495:</span> 
+<span style="color:#000000">496:</span> <span style="color:#FF0000">        # When sed launched in bash, must use double quote instead of single quote</span>
+<span style="color:#000000">497:</span> <span style="color:#FF0000">        sed -i.bak "</span><span style="color:#009900">${DB_UPDATE_COMMAND}</span><span style="color:#FF0000">" ${DB_FILE}</span>
+<span style="color:#000000">498:</span> <span style="color:#FF0000">        DB_UPDATE_RETURN_CODE="</span><span style="color:#009900">${?}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">499:</span> 
+<span style="color:#000000">500:</span> <span style="color:#FF0000">        unset IFS # Restore IFS to default space, tab &amp; newline</span>
+<span style="color:#000000">501:</span> 
+<span style="color:#000000">502:</span> <span style="color:#FF0000">        if [ ${DB_UPDATE_RETURN_CODE} -eq 0 ]; then</span>
+<span style="color:#000000">503:</span> <span style="color:#FF0000">          mail_msg ${HOST_NAME} "</span>Domain <span style="color:#009900">${DOMAIN_NAME}</span> tagged DELETING has been updated as DELETED<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Success<span style="color:#FF0000">"</span>
+<span style="color:#000000">504:</span> 
+<span style="color:#000000">505:</span> <span style="color:#FF0000">          # Revoking is done inner because the main goal is to delete</span>
+<span style="color:#000000">506:</span> <span style="color:#FF0000">          </span>
+<span style="color:#000000">507:</span> <span style="color:#FF0000">          # /usr/local/bin/acme.sh --home /etc/acme/&lt;account_name&gt; --config-home /etc/acme/&lt;account_name&gt; --cert-home &lt;cert_home&gt; --dns &lt;account_dns01&gt; --renew --domain &lt;domain_name&gt;</span>
+<span style="color:#000000">508:</span> <span style="color:#FF0000">          ACME_COMMAND="</span><span style="color:#009900">${ACME_NAME}</span><span style="color:#990000">.</span>sh --home <span style="color:#009900">${HOME_DIR}</span> --config-home <span style="color:#009900">${HOME_DIR}</span> --cert-home <span style="color:#009900">${CERT_HOME}</span> --log <span style="color:#009900">${LOG_ACME_ROOT}/${ACCOUNT_NAME}</span><span style="color:#990000">.</span>log --dns <span style="color:#009900">${ACCOUNT_DNS01}</span> --revoke --domain <span style="color:#009900">${DOMAIN_NAME}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">509:</span> 
+<span style="color:#000000">510:</span> <span style="color:#FF0000">          #--------------------------:</span>
+<span style="color:#000000">511:</span> <span style="color:#FF0000">          log_dbg "</span>ACME_COMMAND      <span style="color:#990000">:</span> <span style="color:#009900">${ACME_COMMAND}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">512:</span> 
+<span style="color:#000000">513:</span> <span style="color:#FF0000">          ${ACME_COMMAND}</span>
+<span style="color:#000000">514:</span> <span style="color:#FF0000">          ACME_RETURN_CODE="</span><span style="color:#009900">${?}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">515:</span> 
+<span style="color:#000000">516:</span> <span style="color:#FF0000">          if [ ${ACME_RETURN_CODE} -eq 0 ]; then</span>
+<span style="color:#000000">517:</span> <span style="color:#FF0000">            mail_msg ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has been revoked<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Success<span style="color:#FF0000">"</span>
+<span style="color:#000000">518:</span> 
+<span style="color:#000000">519:</span> <span style="color:#FF0000">            # Remove local certificate</span>
+<span style="color:#000000">520:</span> <span style="color:#FF0000">            remove_local_cert</span>
+<span style="color:#000000">521:</span> 
+<span style="color:#000000">522:</span> <span style="color:#FF0000">          else</span>
+<span style="color:#000000">523:</span> <span style="color:#FF0000">            mail_err ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has not been revoked<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error code <span style="color:#990000">:</span> <span style="color:#009900">${ACME_RETURN_CODE}</span><span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">524:</span> <span style="color:#FF0000">          fi</span>
+<span style="color:#000000">525:</span> 
+<span style="color:#000000">526:</span> <span style="color:#FF0000">        else</span>
+<span style="color:#000000">527:</span> <span style="color:#FF0000">          mail_err ${HOST_NAME} "</span>Domain <span style="color:#009900">${DOMAIN_NAME}</span> tagged DELETING has not been updated as DELETED<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error code <span style="color:#990000">:</span> <span style="color:#009900">${DB_UPDATE_RETURN_CODE}</span><span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">528:</span> <span style="color:#FF0000">        fi</span>
+<span style="color:#000000">529:</span> 
+<span style="color:#000000">530:</span> <span style="color:#FF0000">      else</span>
+<span style="color:#000000">531:</span> <span style="color:#FF0000">        mail_err ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has not been deleted<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error code <span style="color:#990000">:</span> <span style="color:#009900">${CERTOPS_RETURN_CODE}</span><span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">532:</span> <span style="color:#FF0000">      fi</span>
+<span style="color:#000000">533:</span> 
+<span style="color:#000000">534:</span> <span style="color:#FF0000">    else</span>
+<span style="color:#000000">535:</span> <span style="color:#FF0000">      mail_err ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> <b><span style="color:#0000FF">do</span></b> not exists<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Abnormal context<span style="color:#990000">,</span> abort deleting<span style="color:#FF0000">"</span>
+<span style="color:#000000">536:</span> <span style="color:#FF0000">    fi</span>
+<span style="color:#000000">537:</span> 
+<span style="color:#000000">538:</span> <span style="color:#FF0000">  fi</span>
+<span style="color:#000000">539:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">540:</span> 
+<span style="color:#000000">541:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">542:</span> <span style="color:#FF0000">function copy_process()</span>
+<span style="color:#000000">543:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">544:</span> <span style="color:#FF0000"># Description : Copy valid certificates to hosts</span>
+<span style="color:#000000">545:</span> <span style="color:#FF0000"># Arguments   :</span>
+<span style="color:#000000">546:</span> <span style="color:#FF0000"># Return      :</span>
+<span style="color:#000000">547:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">548:</span> <span style="color:#FF0000">{</span>
+<span style="color:#000000">549:</span> <span style="color:#FF0000">  local CERTOPS_RETURN_CODE=""  </span>
+<span style="color:#000000">550:</span> 
+<span style="color:#000000">551:</span> <span style="color:#FF0000">  # Test if DOMAIN_STATUS is not DELETING or DELETED</span>
+<span style="color:#000000">552:</span> <span style="color:#FF0000">  if [ "</span><span style="color:#009900">${DOMAIN_STATUS:0:7}</span><span style="color:#FF0000">" == "</span><span style="color:#009900">${DOMAIN_STATUS_CREATED:0:7}</span><span style="color:#FF0000">" ] ||</span>
+<span style="color:#000000">553:</span> <span style="color:#FF0000">     [ "</span><span style="color:#009900">${DOMAIN_STATUS:0:7}</span><span style="color:#FF0000">" == "</span><span style="color:#009900">${DOMAIN_STATUS_RENEWED:0:7}</span><span style="color:#FF0000">" ] ; then</span>
+<span style="color:#000000">554:</span> 
+<span style="color:#000000">555:</span> <span style="color:#FF0000">    # Test if "</span>/etc/acme/certs/DOMAIN_NAME/DOMAIN_NAME<span style="color:#990000">.</span>cer<span style="color:#FF0000">" file exist (consistency check - if script was interrupted, the directory could exist with some others files)</span>
+<span style="color:#000000">556:</span> <span style="color:#FF0000">    if [ -f "</span><span style="color:#009900">${CERT_DIR}/${DOMAIN_NAME}</span><span style="color:#990000">.</span>cer<span style="color:#FF0000">" ];then</span>
+<span style="color:#000000">557:</span> <span style="color:#FF0000">    </span>
+<span style="color:#000000">558:</span> <span style="color:#FF0000">     # Copy certificates - Execution of /etc/acme/&lt;host&gt;.certops content</span>
+<span style="color:#000000">559:</span> 
+<span style="color:#000000">560:</span> <span style="color:#FF0000">     # IFS="</span>§<span style="color:#FF0000">" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming</span>
+<span style="color:#000000">561:</span> <span style="color:#FF0000">     # source "</span><span style="color:#009900">${CERTOPS_FILE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">562:</span> <span style="color:#FF0000">     # CERTOPS_RETURN_CODE="</span><span style="color:#009900">${?}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">563:</span> <span style="color:#FF0000">     # unset IFS # Restore IFS to default space, tab &amp; newline    </span>
+<span style="color:#000000">564:</span> 
+<span style="color:#000000">565:</span> <span style="color:#FF0000">      CERTOPS_RETURN_CODE=$(certops_exec)</span>
+<span style="color:#000000">566:</span> 
+<span style="color:#000000">567:</span> <span style="color:#FF0000">      if [ ${CERTOPS_RETURN_CODE} -eq 0 ]; then</span>
+<span style="color:#000000">568:</span> <span style="color:#FF0000">        mail_msg ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has been successfuly copied<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Host is now tagged to service reload<span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">569:</span> 
+<span style="color:#000000">570:</span> <span style="color:#FF0000">        # Reload the server configuration</span>
+<span style="color:#000000">571:</span> <span style="color:#FF0000">        SERVICE_RESTART="</span><b><span style="color:#0000FF">true</span></b><span style="color:#FF0000">"</span>
+<span style="color:#000000">572:</span> 
+<span style="color:#000000">573:</span> <span style="color:#FF0000">      else</span>
+<span style="color:#000000">574:</span> <span style="color:#FF0000">        mail_err ${HOST_NAME} "</span>Certificate <span style="color:#009900">${DOMAIN_NAME}</span> has not been copyied<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error code <span style="color:#990000">:</span> <span style="color:#009900">${CERTOPS_RETURN_CODE}</span><span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">575:</span> <span style="color:#FF0000">      fi</span>
+<span style="color:#000000">576:</span> 
+<span style="color:#000000">577:</span> <span style="color:#FF0000">    fi</span>
+<span style="color:#000000">578:</span> 
+<span style="color:#000000">579:</span> <span style="color:#FF0000">  fi </span>
+<span style="color:#000000">580:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">581:</span> 
+<span style="color:#000000">582:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">583:</span> <span style="color:#FF0000">function status_process()</span>
+<span style="color:#000000">584:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">585:</span> <span style="color:#FF0000"># Description : Display status</span>
+<span style="color:#000000">586:</span> <span style="color:#FF0000"># Arguments   :</span>
+<span style="color:#000000">587:</span> <span style="color:#FF0000"># Return      :</span>
+<span style="color:#000000">588:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">589:</span> <span style="color:#FF0000">{</span>
+<span style="color:#000000">590:</span> <span style="color:#FF0000">  local DOMAIN_CERT_EXPIRE="" </span>
+<span style="color:#000000">591:</span> <span style="color:#FF0000">  local FORMATTED_DOMAIN_NAME=""</span>
+<span style="color:#000000">592:</span> <span style="color:#FF0000">  local FORMATTED_DOMAIN_STATUS=""</span>
+<span style="color:#000000">593:</span> 
+<span style="color:#000000">594:</span> <span style="color:#FF0000">  if [ "</span><span style="color:#009900">${TASK_NAME}</span><span style="color:#FF0000">" == "</span>STATUS<span style="color:#FF0000">" ] ; then</span>
+<span style="color:#000000">595:</span> <span style="color:#FF0000">    FORMATTED_DOMAIN_STATUS=${DOMAIN_STATUS:0:8}</span>
+<span style="color:#000000">596:</span> <span style="color:#FF0000">  else</span>
+<span style="color:#000000">597:</span> <span style="color:#FF0000">    FORMATTED_DOMAIN_STATUS=${DOMAIN_STATUS}</span>
+<span style="color:#000000">598:</span> <span style="color:#FF0000">  fi</span>
+<span style="color:#000000">599:</span> 
+<span style="color:#000000">600:</span> <span style="color:#FF0000">  FORMATTED_DOMAIN_NAME=$(pad_string ${DOMAIN_NAME} 40)</span>
+<span style="color:#000000">601:</span> 
+<span style="color:#000000">602:</span> <span style="color:#FF0000">  if [ "</span><span style="color:#009900">${DOMAIN_STATUS:0:7}</span><span style="color:#FF0000">" == "</span><span style="color:#009900">${DOMAIN_STATUS_CREATED:0:7}</span><span style="color:#FF0000">" ] ||</span>
+<span style="color:#000000">603:</span> <span style="color:#FF0000">     [ "</span><span style="color:#009900">${DOMAIN_STATUS:0:7}</span><span style="color:#FF0000">" == "</span><span style="color:#009900">${DOMAIN_STATUS_RENEWED:0:7}</span><span style="color:#FF0000">" ] ; then</span>
+<span style="color:#000000">604:</span> 
+<span style="color:#000000">605:</span> <span style="color:#FF0000">    DOMAIN_CERT_EXPIRE=$(openssl x509 -dates -noout -in ${DOMAIN_CERT})</span>
+<span style="color:#000000">606:</span> 
+<span style="color:#000000">607:</span> <span style="color:#FF0000">    echo -e "</span><span style="color:#009900">${FORMATTED_DOMAIN_NAME}</span> <span style="color:#009900">${FORMATTED_DOMAIN_STATUS}</span><span style="color:#990000">\</span>t <span style="color:#009900">$(</span>tr <span style="color:#FF0000">'</span><span style="color:#CC33CC">\n</span><span style="color:#FF0000">'</span> <span style="color:#FF0000">' '</span><span style="color:#990000">&lt;&lt;&lt;</span> <span style="color:#009900">${DOMAIN_CERT_EXPIRE}</span><span style="color:#990000">)</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">608:</span> 
+<span style="color:#000000">609:</span> <span style="color:#FF0000">  elif [ "</span><span style="color:#009900">${DOMAIN_STATUS}</span><span style="color:#FF0000">" == "</span><span style="color:#009900">${NULL_VALUE}</span><span style="color:#FF0000">" ] ; then</span>
+<span style="color:#000000">610:</span> 
+<span style="color:#000000">611:</span> <span style="color:#FF0000">    echo -e "</span><span style="color:#009900">${FORMATTED_DOMAIN_NAME}</span> CREATION <span style="color:#990000">(</span><b><span style="color:#0000FF">in</span></b> progress<span style="color:#990000">)</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">612:</span> 
+<span style="color:#000000">613:</span> <span style="color:#FF0000">  else</span>
+<span style="color:#000000">614:</span> <span style="color:#FF0000">  </span>
+<span style="color:#000000">615:</span> <span style="color:#FF0000">    echo -e "</span><span style="color:#009900">${FORMATTED_DOMAIN_NAME}</span> <span style="color:#009900">${FORMATTED_DOMAIN_STATUS}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">616:</span> 
+<span style="color:#000000">617:</span> <span style="color:#FF0000">  fi</span>
+<span style="color:#000000">618:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">619:</span> 
+<span style="color:#000000">620:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">621:</span> <span style="color:#FF0000">function main_process()</span>
+<span style="color:#000000">622:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">623:</span> <span style="color:#FF0000"># Description : Read domains names database and dispatch processes</span>
+<span style="color:#000000">624:</span> <span style="color:#FF0000"># Arguments   :</span>
+<span style="color:#000000">625:</span> <span style="color:#FF0000"># Return      :</span>
+<span style="color:#000000">626:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">627:</span> <span style="color:#FF0000">{</span>
+<span style="color:#000000">628:</span> <span style="color:#FF0000">  HOST_NAME_MEM="</span><span style="color:#009900">${NULL_VALUE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">629:</span> <span style="color:#FF0000">  TASK_NAME=$1</span>
+<span style="color:#000000">630:</span> 
+<span style="color:#000000">631:</span> <span style="color:#FF0000">  if [ "</span><span style="color:#009900">${TASK_NAME}</span><span style="color:#FF0000">" == "</span>STATUS<span style="color:#FF0000">" ] ||</span>
+<span style="color:#000000">632:</span> <span style="color:#FF0000">     [ "</span><span style="color:#009900">${TASK_NAME}</span><span style="color:#FF0000">" == "</span>VERBOSE<span style="color:#FF0000">" ] ; then</span>
+<span style="color:#000000">633:</span> <span style="color:#FF0000">    echo ""</span>
+<span style="color:#000000">634:</span> <span style="color:#FF0000">  else</span>
+<span style="color:#000000">635:</span> <span style="color:#FF0000">    log_msg "</span><span style="color:#009900">${TASK_NAME}</span> - START ---------------------------------------------------------<span style="color:#FF0000">"</span>
+<span style="color:#000000">636:</span> <span style="color:#FF0000">  fi</span>
+<span style="color:#000000">637:</span> <span style="color:#FF0000"> </span>
+<span style="color:#000000">638:</span> <span style="color:#FF0000">  for DOMAINS_NAMES_RECORDS in "</span><span style="color:#009900">${DOMAINS_NAMES_LIST[@]}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">639:</span> <span style="color:#FF0000">  do</span>
+<span style="color:#000000">640:</span> 
+<span style="color:#000000">641:</span> <span style="color:#FF0000">    # Read a record from acmemgr.db</span>
+<span style="color:#000000">642:</span> <span style="color:#FF0000">    IFS="</span><span style="color:#990000">;</span><span style="color:#FF0000">" read -ra CURRENT_RECORD &lt;&lt;&lt; ${DOMAINS_NAMES_RECORDS}</span>
+<span style="color:#000000">643:</span> <span style="color:#FF0000">    unset IFS</span>
+<span style="color:#000000">644:</span> 
+<span style="color:#000000">645:</span> <span style="color:#FF0000">    # Initial reading of HOST_NAME</span>
+<span style="color:#000000">646:</span> <span style="color:#FF0000">    HOST_NAME_TMP=${CURRENT_RECORD[0]}</span>
+<span style="color:#000000">647:</span> 
+<span style="color:#000000">648:</span> <span style="color:#FF0000">    #--------------------------:</span>
+<span style="color:#000000">649:</span> <span style="color:#FF0000">    log_dbg "</span>HOST_NAME_MEM     <span style="color:#990000">:</span> <span style="color:#009900">${HOST_NAME_MEM}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">650:</span> <span style="color:#FF0000">    log_dbg "</span>HOST_NAME_TMP     <span style="color:#990000">:</span> <span style="color:#009900">${HOST_NAME_TMP}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">651:</span> 
+<span style="color:#000000">652:</span> <span style="color:#FF0000">    # If first loop iteration</span>
+<span style="color:#000000">653:</span> <span style="color:#FF0000">    if [ "</span><span style="color:#009900">${HOST_NAME_MEM}</span><span style="color:#FF0000">" == "</span><span style="color:#009900">${NULL_VALUE}</span><span style="color:#FF0000">" ]; then</span>
+<span style="color:#000000">654:</span> 
+<span style="color:#000000">655:</span> <span style="color:#FF0000">      log_dbg "</span>Initialize HOST_NAME_MEM<span style="color:#FF0000">"</span>
+<span style="color:#000000">656:</span> <span style="color:#FF0000">      HOST_NAME_MEM=${HOST_NAME_TMP}</span>
+<span style="color:#000000">657:</span> 
+<span style="color:#000000">658:</span> <span style="color:#FF0000">    # If new host in list (&lt;host_name&gt; break)</span>
+<span style="color:#000000">659:</span> <span style="color:#FF0000">    elif [ ${HOST_NAME_MEM} != ${HOST_NAME_TMP} ]; then</span>
+<span style="color:#000000">660:</span> 
+<span style="color:#000000">661:</span> <span style="color:#FF0000">      log_dbg "</span>Host name <b><span style="color:#0000FF">break</span></b><span style="color:#FF0000">"</span>
+<span style="color:#000000">662:</span> <span style="color:#FF0000">      #--------------------------:</span>
+<span style="color:#000000">663:</span> <span style="color:#FF0000">      log_dbg "</span>SERVICE_RESTART   <span style="color:#990000">:</span> <span style="color:#009900">${SERVICE_RESTART}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">664:</span> 
+<span style="color:#000000">665:</span> <span style="color:#FF0000">      # See if previous host needed to be restarted</span>
+<span style="color:#000000">666:</span> <span style="color:#FF0000">      if [ "</span><span style="color:#009900">${SERVICE_RESTART}</span><span style="color:#FF0000">" == "</span><b><span style="color:#0000FF">true</span></b><span style="color:#FF0000">" ]; then</span>
+<span style="color:#000000">667:</span> 
+<span style="color:#000000">668:</span> <span style="color:#FF0000">        SERVICE_RESTART="</span><b><span style="color:#0000FF">false</span></b><span style="color:#FF0000">"</span>
+<span style="color:#000000">669:</span> 
+<span style="color:#000000">670:</span> <span style="color:#FF0000">        log_dbg "</span>Service restart<span style="color:#FF0000">"</span>
+<span style="color:#000000">671:</span> 
+<span style="color:#000000">672:</span> <span style="color:#FF0000">        # At this point all vars for previous domain are still available, so the host to reload</span>
+<span style="color:#000000">673:</span> 
+<span style="color:#000000">674:</span> <span style="color:#FF0000">        # Reload service - Execution of /etc/acme/&lt;host&gt;.reload content</span>
+<span style="color:#000000">675:</span> <span style="color:#FF0000">        RELOAD_FILE="</span><span style="color:#009900">${ETC_DIR}/${HOST_NAME}</span><span style="color:#990000">.</span>reload<span style="color:#FF0000">"</span>
+<span style="color:#000000">676:</span> 
+<span style="color:#000000">677:</span> <span style="color:#FF0000">        #--------------------------:</span>
+<span style="color:#000000">678:</span> <span style="color:#FF0000">        log_dbg "</span>RELOAD_COMMAND    <span style="color:#990000">:</span> <span style="color:#009900">${RELOAD_COMMAND}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">679:</span> 
+<span style="color:#000000">680:</span> <span style="color:#FF0000">        # ssh -p &lt;host_port&gt; &lt;host_login&gt;@&lt;host_fqdn&gt; bash &lt; /etc/acme/&lt;host&gt;.reload content</span>
+<span style="color:#000000">681:</span> <span style="color:#FF0000">        ssh -p ${HOST_PORT} ${HOST_LOGIN}@${HOST_FQDN} bash &lt; ${RELOAD_FILE}</span>
+<span style="color:#000000">682:</span> <span style="color:#FF0000">        RELOAD_RETURN_CODE="</span><span style="color:#009900">${?}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">683:</span> 
+<span style="color:#000000">684:</span> <span style="color:#FF0000">        if [ ${RELOAD_RETURN_CODE} -eq 0 ]; then</span>
+<span style="color:#000000">685:</span> <span style="color:#FF0000">          mail_msg ${HOST_NAME} "</span>Service has been reloaded<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Success<span style="color:#FF0000">"</span>
+<span style="color:#000000">686:</span> <span style="color:#FF0000">        else</span>
+<span style="color:#000000">687:</span> <span style="color:#FF0000">          mail_err ${HOST_NAME} "</span>Service has not been reloaded<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error code <span style="color:#990000">:</span> <span style="color:#009900">${RELOAD_RETURN_CODE}</span><span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">688:</span> <span style="color:#FF0000">        fi</span>
+<span style="color:#000000">689:</span> <span style="color:#FF0000">      fi</span>
+<span style="color:#000000">690:</span> <span style="color:#FF0000">    fi</span>
+<span style="color:#000000">691:</span> 
+<span style="color:#000000">692:</span> <span style="color:#FF0000">    # Update vars for current host</span>
+<span style="color:#000000">693:</span> <span style="color:#FF0000">    HOST_NAME_MEM=${HOST_NAME_TMP}</span>
+<span style="color:#000000">694:</span> 
+<span style="color:#000000">695:</span> <span style="color:#FF0000">    #--------------------------:</span>
+<span style="color:#000000">696:</span> <span style="color:#FF0000">    log_dbg "</span>HOST_NAME_MEM     <span style="color:#990000">:</span> <span style="color:#009900">${HOST_NAME_MEM}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">697:</span> 
+<span style="color:#000000">698:</span> <span style="color:#FF0000">    if [ ${HOST_NAME_MEM} != "</span><span style="color:#009900">${NULL_VALUE}</span><span style="color:#FF0000">" ]; then</span>
+<span style="color:#000000">699:</span> 
+<span style="color:#000000">700:</span> <span style="color:#FF0000">      # Record : "</span>DOM_UNAME<span style="color:#990000">;</span>HOST_LOGIN<span style="color:#990000">;</span>HOST_FQDN<span style="color:#990000">,</span>HOST_PORT<span style="color:#990000">;</span>ACCOUNT_NAME<span style="color:#990000">;</span>SERVICE_NAME<span style="color:#990000">;</span>DOMAIN_NAME<span style="color:#990000">;[</span>DOMAIN_STATUS<span style="color:#990000">]</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">701:</span> 
+<span style="color:#000000">702:</span> <span style="color:#FF0000">      HOST_NAME=${CURRENT_RECORD[0]}                # HOST_NAME       : Host name for scripting, mailing and filtering purposes (only a-z,0-9,'-','_')</span>
+<span style="color:#000000">703:</span> <span style="color:#FF0000">      HOST_LOGIN=${CURRENT_RECORD[1]}               # HOST_LOGIN      : Host login</span>
+<span style="color:#000000">704:</span> <span style="color:#FF0000">      HOST_FQDN=${CURRENT_RECORD[2]}                # HOST_FQDN       : Host url (qualified form or "</span>domuNNNv1<span style="color:#FF0000">" for local HOST)</span>
+<span style="color:#000000">705:</span> <span style="color:#FF0000">      HOST_PORT=${CURRENT_RECORD[3]}                # HOST_PORT       : Host port</span>
+<span style="color:#000000">706:</span> <span style="color:#FF0000">      ACCOUNT_NAME=${CURRENT_RECORD[4]}             # ACCOUNT_NAME    : Registrar DNS-01 API account to which the domain name belongs</span>
+<span style="color:#000000">707:</span> <span style="color:#FF0000">      DOMAIN_NAME=${CURRENT_RECORD[5]}              # DOMAIN_NAME     : Domain name hosted</span>
+<span style="color:#000000">708:</span> 
+<span style="color:#000000">709:</span> <span style="color:#FF0000">      # Check if CURRENT_RECORD[6] is defined</span>
+<span style="color:#000000">710:</span> 
+<span style="color:#000000">711:</span> <span style="color:#FF0000">      if [ -n "</span><span style="color:#009900">${CURRENT_RECORD[6]+set}</span><span style="color:#FF0000">" ]; then</span>
+<span style="color:#000000">712:</span> <span style="color:#FF0000">        log_dbg "</span>CURRENT-RECORD-<span style="color:#993399">6</span> was SET<span style="color:#FF0000">"</span>
+<span style="color:#000000">713:</span> <span style="color:#FF0000">        DOMAIN_STATUS=${CURRENT_RECORD[6]}          # CURRENT_RECORD[6] is defined</span>
+<span style="color:#000000">714:</span> <span style="color:#FF0000">      else</span>
+<span style="color:#000000">715:</span> <span style="color:#FF0000">        log_dbg "</span>CURRENT-RECORD-<span style="color:#993399">6</span> was UNSET<span style="color:#FF0000">"</span>
+<span style="color:#000000">716:</span> <span style="color:#FF0000">        DOMAIN_STATUS="</span><span style="color:#009900">${NULL_VALUE}</span><span style="color:#FF0000">"               # CURRENT_RECORD[6] is not defined</span>
+<span style="color:#000000">717:</span> <span style="color:#FF0000">      fi </span>
+<span style="color:#000000">718:</span> 
+<span style="color:#000000">719:</span> <span style="color:#FF0000">      HOME_DIR="</span><span style="color:#009900">${ETC_DIR}/${ACCOUNT_NAME}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">720:</span> 
+<span style="color:#000000">721:</span> <span style="color:#FF0000">      ACCOUNT_FILE="</span><span style="color:#009900">${HOME_DIR}</span>/myaccount<span style="color:#990000">.</span>conf<span style="color:#FF0000">"</span>
+<span style="color:#000000">722:</span> <span style="color:#FF0000">      CERTOPS_FILE="</span><span style="color:#009900">${ETC_DIR}/${HOST_NAME}</span><span style="color:#990000">.</span>certops<span style="color:#FF0000">"</span>
+<span style="color:#000000">723:</span> <span style="color:#FF0000">      RELOAD_FILE="</span><span style="color:#009900">${ETC_DIR}/${HOST_NAME}</span><span style="color:#990000">.</span>reload<span style="color:#FF0000">"</span>
+<span style="color:#000000">724:</span> 
+<span style="color:#000000">725:</span> <span style="color:#FF0000">      # Check files</span>
+<span style="color:#000000">726:</span> 
+<span style="color:#000000">727:</span> <span style="color:#FF0000">      if [ -f "</span><span style="color:#009900">${ACCOUNT_FILE}</span><span style="color:#FF0000">" ]; then</span>
+<span style="color:#000000">728:</span> <span style="color:#FF0000">        source "</span><span style="color:#009900">${ACCOUNT_FILE}</span><span style="color:#FF0000">"  # Loading ACCOUNT_FILE then read ACCOUNT_DNS01, CERT_HOME &amp; ACCOUNT_EMAIL values</span>
+<span style="color:#000000">729:</span> <span style="color:#FF0000">      else</span>
+<span style="color:#000000">730:</span> <span style="color:#FF0000">        mail_err ${HOST_NAME} "</span>File <span style="color:#009900">${ACCOUNT_FILE}</span> not found<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error<span style="color:#FF0000">"</span>
+<span style="color:#000000">731:</span> <span style="color:#FF0000">        exit 3</span>
+<span style="color:#000000">732:</span> <span style="color:#FF0000">      fi</span>
+<span style="color:#000000">733:</span> 
+<span style="color:#000000">734:</span> <span style="color:#FF0000">      if [ ! -f "</span><span style="color:#009900">${CERTOPS_FILE}</span><span style="color:#FF0000">" ]; then</span>
+<span style="color:#000000">735:</span> <span style="color:#FF0000">        mail_err ${HOST_NAME} "</span>File <span style="color:#990000">:</span> <span style="color:#009900">${CERTOPS_FILE}</span> not found<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error<span style="color:#FF0000">"</span>
+<span style="color:#000000">736:</span> <span style="color:#FF0000">        exit 4</span>
+<span style="color:#000000">737:</span> <span style="color:#FF0000">      fi</span>
+<span style="color:#000000">738:</span> 
+<span style="color:#000000">739:</span> <span style="color:#FF0000">      if [ ! -f "</span><span style="color:#009900">${RELOAD_FILE}</span><span style="color:#FF0000">" ]; then</span>
+<span style="color:#000000">740:</span> <span style="color:#FF0000">        mail_err ${HOST_NAME} "</span>File <span style="color:#990000">:</span> <span style="color:#009900">${RELOAD_FILE}</span> not found<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error<span style="color:#FF0000">"</span>
+<span style="color:#000000">741:</span> <span style="color:#FF0000">        exit 5</span>
+<span style="color:#000000">742:</span> <span style="color:#FF0000">      fi</span>
+<span style="color:#000000">743:</span> 
+<span style="color:#000000">744:</span> <span style="color:#FF0000">      CERT_DIR="</span><span style="color:#009900">${CERT_HOME}/${DOMAIN_NAME}</span><span style="color:#FF0000">"        # /etc/acme/certs/&lt;domain_name&gt;</span>
+<span style="color:#000000">745:</span> <span style="color:#FF0000">      DOMAIN_KEY="</span><span style="color:#009900">${CERT_DIR}/${DOMAIN_NAME}</span><span style="color:#990000">.</span>key<span style="color:#FF0000">"   # /etc/acme/certs/&lt;domain_name&gt;/www.domain.tld.key</span>
+<span style="color:#000000">746:</span> <span style="color:#FF0000">      DOMAIN_CERT="</span><span style="color:#009900">${CERT_DIR}/${CERT_FULLCHAIN}</span><span style="color:#FF0000">"   # /etc/acme/certs/&lt;domain_name&gt;/fullchain.cer</span>
+<span style="color:#000000">747:</span> 
+<span style="color:#000000">748:</span> <span style="color:#FF0000">      # Debug display</span>
+<span style="color:#000000">749:</span> <span style="color:#FF0000">      #--------------------------:</span>
+<span style="color:#000000">750:</span> <span style="color:#FF0000">      log_dbg "</span>HOST_NAME         <span style="color:#990000">:</span> <span style="color:#009900">${HOST_NAME}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">751:</span> <span style="color:#FF0000">      log_dbg "</span>HOST_LOGIN        <span style="color:#990000">:</span> <span style="color:#009900">${HOST_LOGIN}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">752:</span> <span style="color:#FF0000">      log_dbg "</span>HOST_FQDN         <span style="color:#990000">:</span> <span style="color:#009900">${HOST_FQDN}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">753:</span> <span style="color:#FF0000">      log_dbg "</span>HOST_PORT         <span style="color:#990000">:</span> <span style="color:#009900">${HOST_PORT}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">754:</span> <span style="color:#FF0000">      log_dbg "</span>ACCOUNT_NAME      <span style="color:#990000">:</span> <span style="color:#009900">${ACCOUNT_NAME}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">755:</span> <span style="color:#FF0000">      log_dbg "</span>DOMAIN_NAME       <span style="color:#990000">:</span> <span style="color:#009900">${DOMAIN_NAME}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">756:</span> <span style="color:#FF0000">      log_dbg "</span>DOMAIN_STATUS     <span style="color:#990000">:</span> <span style="color:#009900">${DOMAIN_STATUS}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">757:</span> <span style="color:#FF0000">      log_dbg "</span>CERT_DIR          <span style="color:#990000">:</span> <span style="color:#009900">${CERT_DIR}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">758:</span> <span style="color:#FF0000">      log_dbg "</span>DOMAIN_KEY        <span style="color:#990000">:</span> <span style="color:#009900">${DOMAIN_KEY}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">759:</span> <span style="color:#FF0000">      log_dbg "</span>DOMAIN_CERT       <span style="color:#990000">:</span> <span style="color:#009900">${DOMAIN_CERT}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">760:</span> <span style="color:#FF0000">      log_dbg "</span>HOME_DIR          <span style="color:#990000">:</span> <span style="color:#009900">${HOME_DIR}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">761:</span> <span style="color:#FF0000">      log_dbg "</span>ACCOUNT_FILE      <span style="color:#990000">:</span> <span style="color:#009900">${ACCOUNT_FILE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">762:</span> <span style="color:#FF0000">      log_dbg "</span>CERTOPS_FILE      <span style="color:#990000">:</span> <span style="color:#009900">${CERTOPS_FILE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">763:</span> <span style="color:#FF0000">      log_dbg "</span>RELOAD_FILE       <span style="color:#990000">:</span> <span style="color:#009900">${RELOAD_FILE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">764:</span> <span style="color:#FF0000">      log_dbg "</span>ACCOUNT_DNS01     <span style="color:#990000">:</span> <span style="color:#009900">${ACCOUNT_DNS01}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">765:</span> 
+<span style="color:#000000">766:</span> <span style="color:#FF0000">      case "</span><span style="color:#009900">${TASK_NAME}</span><span style="color:#FF0000">" in</span>
+<span style="color:#000000">767:</span> <span style="color:#FF0000">        CREATE)</span>
+<span style="color:#000000">768:</span> <span style="color:#FF0000">          create_process</span>
+<span style="color:#000000">769:</span> <span style="color:#FF0000">          ;;</span>
+<span style="color:#000000">770:</span> <span style="color:#FF0000">        RENEW)</span>
+<span style="color:#000000">771:</span> <span style="color:#FF0000">          renew_process</span>
+<span style="color:#000000">772:</span> <span style="color:#FF0000">          ;;</span>
+<span style="color:#000000">773:</span> <span style="color:#FF0000">        UPDATE)</span>
+<span style="color:#000000">774:</span> <span style="color:#FF0000">          create_process</span>
+<span style="color:#000000">775:</span> <span style="color:#FF0000">          delete_process</span>
+<span style="color:#000000">776:</span> <span style="color:#FF0000">          ;;</span>
+<span style="color:#000000">777:</span> <span style="color:#FF0000">        DELETE)</span>
+<span style="color:#000000">778:</span> <span style="color:#FF0000">          delete_process</span>
+<span style="color:#000000">779:</span> <span style="color:#FF0000">          ;;</span>
+<span style="color:#000000">780:</span> <span style="color:#FF0000">        COPY)</span>
+<span style="color:#000000">781:</span> <span style="color:#FF0000">          copy_process</span>
+<span style="color:#000000">782:</span> <span style="color:#FF0000">         ;;</span>
+<span style="color:#000000">783:</span> <span style="color:#FF0000">        STATUS)</span>
+<span style="color:#000000">784:</span> <span style="color:#FF0000">          status_process</span>
+<span style="color:#000000">785:</span> <span style="color:#FF0000">         ;;</span>
+<span style="color:#000000">786:</span> <span style="color:#FF0000">        VERBOSE)</span>
+<span style="color:#000000">787:</span> <span style="color:#FF0000">          status_process</span>
+<span style="color:#000000">788:</span> <span style="color:#FF0000">         ;; </span>
+<span style="color:#000000">789:</span> <span style="color:#FF0000">      esac</span>
+<span style="color:#000000">790:</span> 
+<span style="color:#000000">791:</span> <span style="color:#FF0000">    else</span>
+<span style="color:#000000">792:</span> <span style="color:#FF0000">      if [ "</span><span style="color:#009900">${TASK_NAME}</span><span style="color:#FF0000">" == "</span>STATUS<span style="color:#FF0000">" ] ||</span>
+<span style="color:#000000">793:</span> <span style="color:#FF0000">         [ "</span><span style="color:#009900">${TASK_NAME}</span><span style="color:#FF0000">" == "</span>VERBOSE<span style="color:#FF0000">" ] ; then</span>
+<span style="color:#000000">794:</span> <span style="color:#FF0000">        echo ""</span>
+<span style="color:#000000">795:</span> <span style="color:#FF0000">      else</span>
+<span style="color:#000000">796:</span> <span style="color:#FF0000">        log_msg "</span><span style="color:#009900">${TASK_NAME}</span> - END -----------------------------------------------------------<span style="color:#FF0000">"</span>
+<span style="color:#000000">797:</span> <span style="color:#FF0000">      fi</span>
+<span style="color:#000000">798:</span> <span style="color:#FF0000">    fi</span>
+<span style="color:#000000">799:</span> <span style="color:#FF0000">  done</span>
+<span style="color:#000000">800:</span> <span style="color:#FF0000">}</span>
+<span style="color:#000000">801:</span> 
+<span style="color:#000000">802:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">803:</span> <span style="color:#FF0000"># main_program</span>
+<span style="color:#000000">804:</span> <span style="color:#FF0000">#-------------------------------------------------------------------------------</span>
+<span style="color:#000000">805:</span> 
+<span style="color:#000000">806:</span> <span style="color:#FF0000">COMMAND_NAME=$1</span>
+<span style="color:#000000">807:</span> 
+<span style="color:#000000">808:</span> <span style="color:#FF0000">NULL_VALUE="</span>null<span style="color:#FF0000">"</span>
+<span style="color:#000000">809:</span> <span style="color:#FF0000">SERVICE_RESTART="</span><b><span style="color:#0000FF">false</span></b><span style="color:#FF0000">"</span>
+<span style="color:#000000">810:</span> <span style="color:#FF0000">TASK_NAME="</span>INIT  <span style="color:#FF0000">"</span>
+<span style="color:#000000">811:</span> 
+<span style="color:#000000">812:</span> <span style="color:#FF0000">DOMAIN_STATUS_DELETING="</span>DELETING<span style="color:#FF0000">"</span>
+<span style="color:#000000">813:</span> <span style="color:#FF0000">DOMAIN_STATUS_DELETED="</span>DELETED<span style="color:#FF0000">"</span>
+<span style="color:#000000">814:</span> <span style="color:#FF0000">DOMAIN_STATUS_CREATED="</span>CREATED<span style="color:#FF0000">"</span>
+<span style="color:#000000">815:</span> <span style="color:#FF0000">DOMAIN_STATUS_RENEWED="</span>RENEWED<span style="color:#FF0000">"</span>
+<span style="color:#000000">816:</span> 
+<span style="color:#000000">817:</span> <span style="color:#FF0000">CERT_FULLCHAIN="</span>fullchain<span style="color:#990000">.</span>cer<span style="color:#FF0000">"</span>
+<span style="color:#000000">818:</span> <span style="color:#FF0000">CERT_CA="</span>ca<span style="color:#990000">.</span>cer<span style="color:#FF0000">"</span>
+<span style="color:#000000">819:</span> 
+<span style="color:#000000">820:</span> <span style="color:#FF0000">LOG_TIMESTAMP="" # To be acme.sh log compliant (same format). Replace LOG_TIMESTAMP="</span><span style="color:#990000">+%</span>Y<span style="color:#990000">%</span>m<span style="color:#990000">%</span>d - <span style="color:#990000">%</span>H<span style="color:#990000">%</span>M<span style="color:#990000">%</span>S<span style="color:#FF0000">" </span>
+<span style="color:#000000">821:</span> 
+<span style="color:#000000">822:</span> <span style="color:#FF0000">LOCAL_HOST=$(hostname -s)</span>
+<span style="color:#000000">823:</span> 
+<span style="color:#000000">824:</span> <span style="color:#FF0000"># Create log file if nonexistent</span>
+<span style="color:#000000">825:</span> <span style="color:#FF0000">if [ ! -f "</span><span style="color:#009900">${LOG_MANAGER_FILE}</span><span style="color:#FF0000">" ]; then</span>
+<span style="color:#000000">826:</span> <span style="color:#FF0000">   echo "" &gt; "</span><span style="color:#009900">${LOG_MANAGER_FILE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">827:</span> <span style="color:#FF0000">fi  </span>
+<span style="color:#000000">828:</span> 
+<span style="color:#000000">829:</span> <span style="color:#FF0000">echo ""</span>
+<span style="color:#000000">830:</span> <span style="color:#FF0000">echo "</span>Sowebio SARL <span style="color:#990000">(</span>R<span style="color:#990000">)</span> An acme<span style="color:#990000">.</span>sh manager using DNS-<span style="color:#993399">01</span> protocol<span style="color:#990000">.</span> Version <span style="color:#009900">${MANAGER_VERSION}</span><span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">831:</span> <span style="color:#FF0000">echo "</span>Copyright    <span style="color:#990000">(</span>C<span style="color:#990000">)</span> Stephane Riviere <span style="color:#993399">2017</span>-<span style="color:#993399">2018</span><span style="color:#990000">,</span> according to GPLv3 or greater<span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">832:</span> 
+<span style="color:#000000">833:</span> <span style="color:#FF0000">#--------------------------:</span>
+<span style="color:#000000">834:</span> <span style="color:#FF0000">log_dbg "</span>DB_FILE           <span style="color:#990000">:</span> <span style="color:#009900">${DB_FILE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">835:</span> 
+<span style="color:#000000">836:</span> <span style="color:#FF0000">if [ -f "</span><span style="color:#009900">${DB_FILE}</span><span style="color:#FF0000">" ]; then</span>
+<span style="color:#000000">837:</span> 
+<span style="color:#000000">838:</span> <span style="color:#FF0000">  source "</span><span style="color:#009900">${DB_FILE}</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">839:</span> 
+<span style="color:#000000">840:</span> <span style="color:#FF0000">  # acmemgr.sh renamed acmemgr.create is eq to acmemgr.sh --create (useful for /etc/cron.hourly jobs)</span>
+<span style="color:#000000">841:</span> <span style="color:#FF0000">  if [[ $0 = *"</span><span style="color:#990000">.</span>update<span style="color:#FF0000">"* ]]; then</span>
+<span style="color:#000000">842:</span> <span style="color:#FF0000">    COMMAND_NAME="</span>--update<span style="color:#FF0000">"</span>
+<span style="color:#000000">843:</span> <span style="color:#FF0000">  fi</span>
+<span style="color:#000000">844:</span> 
+<span style="color:#000000">845:</span> <span style="color:#FF0000">  # acmemgr.sh renamed acmemgr.renew is eq to acmemgr.sh --renew (useful for /etc/cron.weekly jobs)</span>
+<span style="color:#000000">846:</span> <span style="color:#FF0000">  if [[ $0 = *"</span><span style="color:#990000">.</span>renew<span style="color:#FF0000">"* ]]; then</span>
+<span style="color:#000000">847:</span> <span style="color:#FF0000">    COMMAND_NAME="</span>--renew<span style="color:#FF0000">"</span>
+<span style="color:#000000">848:</span> <span style="color:#FF0000">  fi</span>
+<span style="color:#000000">849:</span> 
+<span style="color:#000000">850:</span> <span style="color:#FF0000">  case "</span><span style="color:#009900">${COMMAND_NAME}</span><span style="color:#FF0000">" in</span>
+<span style="color:#000000">851:</span> <span style="color:#FF0000">    --create)</span>
+<span style="color:#000000">852:</span> <span style="color:#FF0000">      main_process "</span>CREATE<span style="color:#FF0000">"</span>
+<span style="color:#000000">853:</span> <span style="color:#FF0000">      ;;</span>
+<span style="color:#000000">854:</span> <span style="color:#FF0000">    --renew)</span>
+<span style="color:#000000">855:</span> <span style="color:#FF0000">      main_process "</span>RENEW<span style="color:#FF0000">"</span>
+<span style="color:#000000">856:</span> <span style="color:#FF0000">      ;;</span>
+<span style="color:#000000">857:</span> <span style="color:#FF0000">    --update)</span>
+<span style="color:#000000">858:</span> <span style="color:#FF0000">      main_process "</span>UPDATE<span style="color:#FF0000">"</span>
+<span style="color:#000000">859:</span> <span style="color:#FF0000">      ;;</span>
+<span style="color:#000000">860:</span> <span style="color:#FF0000">    --copy)</span>
+<span style="color:#000000">861:</span> <span style="color:#FF0000">      main_process "</span>COPY<span style="color:#FF0000">"</span>
+<span style="color:#000000">862:</span> <span style="color:#FF0000">      ;;</span>
+<span style="color:#000000">863:</span> <span style="color:#FF0000">    --delete)</span>
+<span style="color:#000000">864:</span> <span style="color:#FF0000">      main_process "</span>DELETE<span style="color:#FF0000">"</span>
+<span style="color:#000000">865:</span> <span style="color:#FF0000">      ;;</span>
+<span style="color:#000000">866:</span> <span style="color:#FF0000">    --status)</span>
+<span style="color:#000000">867:</span> <span style="color:#FF0000">      main_process "</span>STATUS<span style="color:#FF0000">"</span>
+<span style="color:#000000">868:</span> <span style="color:#FF0000">      ;;</span>
+<span style="color:#000000">869:</span> <span style="color:#FF0000">    --verbose)</span>
+<span style="color:#000000">870:</span> <span style="color:#FF0000">      main_process "</span>VERBOSE<span style="color:#FF0000">"</span>
+<span style="color:#000000">871:</span> <span style="color:#FF0000">      ;;</span>
+<span style="color:#000000">872:</span> <span style="color:#FF0000">    *)</span>
+<span style="color:#000000">873:</span> <span style="color:#FF0000">    echo "</span>Usage<span style="color:#990000">:</span> acmecrt<span style="color:#990000">.</span>sh <b><span style="color:#0000FF">command</span></b><span style="color:#FF0000">"</span>
+<span style="color:#000000">874:</span> <span style="color:#FF0000">    echo "</span>Command <span style="color:#990000">(</span>one at a time<span style="color:#990000">):</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">875:</span> <span style="color:#FF0000">    echo "</span>  --create  - Create non-existent certificate <span style="color:#990000">(</span>according to <span style="color:#009900">${DB_FILE}</span> database<span style="color:#990000">)</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">876:</span> <span style="color:#FF0000">    echo "</span>  --renew   - Renew certificates <span style="color:#990000">(</span>from a month before they expire<span style="color:#990000">)</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">877:</span> <span style="color:#FF0000">    echo "</span>  --update  - Update certificates <span style="color:#990000">(</span>create and delete according to <span style="color:#009900">${DB_FILE}</span> database<span style="color:#990000">)</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">878:</span> <span style="color:#FF0000">    echo "</span>  --delete  - Delete certificates <span style="color:#990000">(</span>according to <span style="color:#009900">${DB_FILE}</span> database<span style="color:#990000">)</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">879:</span> <span style="color:#FF0000">    echo "</span>  --copy    - Distribute certificates on hosts <span style="color:#990000">(</span>dedicated or virtuals<span style="color:#990000">)</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">880:</span> <span style="color:#FF0000">    echo "</span>  --status  - Status of certificates <span style="color:#990000">(</span>with validy dates<span style="color:#990000">)</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">881:</span> <span style="color:#FF0000">    echo "</span>  --verbose - Status of certificates <span style="color:#990000">(</span>with last operation dates and validity dates<span style="color:#990000">)</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">882:</span> <span style="color:#FF0000">    echo "</span>  --help    - Command line <b><span style="color:#0000FF">help</span></b><span style="color:#FF0000">"</span>
+<span style="color:#000000">883:</span> <span style="color:#FF0000">    echo "</span>Return codes<span style="color:#990000">:</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">884:</span> <span style="color:#FF0000">    echo "</span>  <span style="color:#993399">0</span> - No fatal error<span style="color:#990000">,</span> <b><span style="color:#0000FF">read</span></b> <span style="color:#009900">${LOG_MANAGER_FILE}</span> <b><span style="color:#0000FF">for</span></b> process related errors<span style="color:#FF0000">"</span>
+<span style="color:#000000">885:</span> <span style="color:#FF0000">    echo "</span>  <span style="color:#993399">1</span> - Command error<span style="color:#FF0000">"</span>
+<span style="color:#000000">886:</span> <span style="color:#FF0000">    echo "</span>  <span style="color:#993399">2</span> - Domains names datase <span style="color:#009900">${DB_FILE}</span> not found<span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">887:</span> <span style="color:#FF0000">    echo "</span>  <span style="color:#993399">3</span> - File <span style="color:#009900">${ETC_DIR}</span>/ACCOUNT_NAME/myaccount<span style="color:#990000">.</span>conf not found<span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">888:</span> <span style="color:#FF0000">    echo "</span>  <span style="color:#993399">4</span> - File <span style="color:#009900">${ETC_DIR}</span>/HOST_NAME<span style="color:#990000">.</span>certops not found<span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">889:</span> <span style="color:#FF0000">    echo "</span>  <span style="color:#993399">5</span> - File <span style="color:#009900">${ETC_DIR}</span>/HOST_NAME<span style="color:#990000">.</span>reload not found<span style="color:#990000">.</span><span style="color:#FF0000">"</span>
+<span style="color:#000000">890:</span> <span style="color:#FF0000">    echo ""</span>
+<span style="color:#000000">891:</span> <span style="color:#FF0000">    exit 1</span>
+<span style="color:#000000">892:</span> 
+<span style="color:#000000">893:</span> <span style="color:#FF0000">    ;;</span>
+<span style="color:#000000">894:</span> <span style="color:#FF0000">  esac</span>
+<span style="color:#000000">895:</span> <span style="color:#FF0000">  exit 0</span>
+<span style="color:#000000">896:</span> 
+<span style="color:#000000">897:</span> <span style="color:#FF0000">else</span>
+<span style="color:#000000">898:</span> <span style="color:#FF0000">  mail_err "</span>INIT<span style="color:#FF0000">" "</span>File <span style="color:#009900">${DB_FILE}</span> not found<span style="color:#990000">.</span><span style="color:#FF0000">" "</span>Error<span style="color:#FF0000">"</span>
+<span style="color:#000000">899:</span> <span style="color:#FF0000">  exit 2</span>
+<span style="color:#000000">900:</span> <span style="color:#FF0000">fi</span>
+<span style="color:#000000">901:</span> 
+<span style="color:#000000">902:</span> <span style="color:#FF0000">#----------------------------------------------------------------------------</span>
+<span style="color:#000000">903:</span> <span style="color:#FF0000"># EOF</span>
+<span style="color:#000000">904:</span> <span style="color:#FF0000">#----------------------------------------------------------------------------</span>
+<span style="color:#000000">905:</span> </pre>
+</body>
+</html>

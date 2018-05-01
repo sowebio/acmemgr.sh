@@ -1,0 +1,50 @@
+#-------------------------------------------------------------------------------
+# ACMEMGR.SH - an ACME.SH manager using DNS-01 issued LETSENCRYPT certificates
+#
+# acmemgr.db - domains names database
+#-------------------------------------------------------------------------------
+#
+# HOST_NAME       : Host name for scripting, mailing and filtering purposes (only a-z,0-9,'-','_')
+# HOST_LOGIN      : Host login
+# HOST_FQDN       : Host url (full qualified form or "domuNNNv1" for local HOST)
+# HOST_PORT       : Host port
+# ACCOUNT_NAME    : Registrar DNS-01 API account to which the domain name belongs
+# DOMAIN_NAME     : Domain name hosted
+# [DOMAIN_STATUS] : Domain status (undefined or set to "DELETING" to suppress the certificate)
+#
+#-------------------------------------------------------------------------------
+
+# NOTICE #######################################################################
+# To benefit from the smart reload function, you must sort this list by HOST_NAME.
+# A domain name beginning by "[www.]domain.tld" gets an extra "domain.tld" in certificate.
+# NOTICE #######################################################################
+
+declare -a DOMAINS_NAMES_LIST=(
+
+#"HOST_NAME;HOST_LOGIN;HOST_FQDN,HOST_PORT;ACCOUNT_NAME;DOMAIN_NAME;[DOMAIN_STATUS]"
+
+#--- Some domains created and renewed
+
+"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.domain1.tld;CREATED - lundi 12 fevrier 2018, 17:13:11 (UTC+0100)"
+"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.domain2.tld;RENEWED - lundi 13 fevrier 2018, 13:08:14 (UTC+0100)"
+
+"rs11domu110;root;domu110v1;45678;ACCOUNT_NAME_TWO;www.domain3.tld;RENEWED - lundi 14 fevrier 2018, 12:22:44 (UTC+0100)"
+"rs11domu110;root;domu110v1;45678;ACCOUNT_NAME_TWO;www.domain6.tld;RENEWED - lundi 14 fevrier 2018, 12:22:44 (UTC+0100)"
+"rs11domu110;root;domu110v1;45678;ACCOUNT_NAME_TWO;www.domain4.tld;RENEWED - lundi 14 fevrier 2018, 12:22:44 (UTC+0100)"
+"rs11domu110;root;domu110v1;45678;ACCOUNT_NAME_TWO;www.domain5.tld;RENEWED - lundi 14 fevrier 2018, 12:22:44 (UTC+0100)"
+
+"rs11domu001;root;domu110v1;45678;ACCOUNT_NAME_ONE;www.domain8.tld;CREATED - lundi 14 fevrier 2018, 12:22:44 (UTC+0100)"
+"rs11domu001;root;domu110v1;45678;ACCOUNT_NAME_TWO;www.domain7.tld;RENEWED - lundi 14 fevrier 2018, 12:22:44 (UTC+0100)"
+
+"rs11domu120;root;domu120v1;61234;ACCOUNT_NAME_ONE;www.domain9.tld;RENEWED - lundi 15 fevrier 2018, 15:18:22 (UTC+0100)"
+
+"rs11domu210;root;domu210v1;18023;ACCOUNT_NAME_FIFTEEN;www.domainN.tld;CREATED - lundi 15 février 2018, 15:18:22 (UTC+0100)"
+
+# DO NOT DELETE THE LINE BELOW #################################################
+"null;null;null;null;null;null"
+# DO NOT DELETE THE LINE ABOVE #################################################
+)
+
+#-------------------------------------------------------------------------------
+# EOF
+#-------------------------------------------------------------------------------
