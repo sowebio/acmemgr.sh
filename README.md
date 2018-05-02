@@ -148,7 +148,7 @@ All the management is done in a centralized CERTIFICATE DISTRIBUTION SERVER :
 - Simple, modulat and understandable architecture;
 - Only one file to manage : the domain name database.
 
-![Architecture](./acmemgr.fig1.png)
+![Architecture](./doc/acmemgr.fig1.png)
 
 ## Architecture (modular view)
 
@@ -164,7 +164,7 @@ The CERTIFICATE DISTRIBUTION SERVER host only :
 
 For a more detailed view at the file level, see below the "Multi-accounts tree example" section.
 
-![Modular view](./acmemgr.fig2.png)
+![Modular view](./doc/acmemgr.fig2.png)
 
 ## Requirements
 
