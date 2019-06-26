@@ -1,0 +1,502 @@
+
+
+
+
+
+parmi les idées, je me suis dit qu'il faudrait peut-être laisser la possibilité de limiter
+les notifications par mail, surtout quand acmemgr dit "pas encore nécessaire de
+renouveler". Ca permet de recevoir les alertes de renouvellement et d'erreurs, et
+ne pas être trop noyé sous les notifications où il ne se passe rien. Tu gères ca comment, toi ? avec
+des filtres côté messagerie ?
+
+
+
+Un jour je rajouterais bien, dans un cadre de prod de sites avec installation/destruction automatique :
+- un .acmemgr.sh.lock pour signaler à un process tiers que acmemgr.sh est en train de taffer sur acmemgr.db
+- un .acmemgr.db.lock pour signaler à acmemgr.sh qu'un process tiers est en train de taffer sur acmemgr.db
+
+Pour l'instant, avec le bon éditeur qui rafraîchit automatique acmemgr.db, je me contente de l'avoir ouvert en permanence dans un onglet...
+
+
+
+
+
+
+
+Le 20/06/2019 à 15:08, Stéphane Rivière écrivait :
+> Merci Léa, je vais noter ce snippet !!!
+>
+>> wget \
+>>    2>/dev/null \
+>>    -O- \
+>>    https://raw.githubusercontent.com/sowebio/acmemgr.sh/master/acmemgr.sh \
+>> | shellcheck \
+>>    >shellcheck.txt \
+>>    -
+>
+> Pour info la fonction dynvar (44-77) n'est pas utilisée et je vais la virer
+>
+> Pour le reste, j'ai plus qu'à corriger :)))
+>
+
+Au lieu de :
+
+local ARG_2_STRIPPED=$(tr '\n' ' ' <<<${2})
+
+qui masque un éventuel code de retour de la commande tr, manque de guillemets, et qui crée un appel à un outil externe ; tu peux utiliser les fonctions internes à Bash pour la manipulation des chaînes de caractère :
+
+local ARG_2_STRIPPED
+  ARG_2_STRIPPED="${2//[[:space:]]/ }"
+
+Substitution de chaîne de caractères en Bash :
+
+${chaine/sous_chaine/remplacement}
+
+    Substitue la première occurrence de sous_chaine avec le remplacement.
+
+${chaine//sous_chaine/remplacement}
+
+    Substitue toutes les occurences de sous_chaine avec le remplacement.
+
+
+Pour le panache en début de fichier, c’est mieux d’employer l’environnement :
+
+#!/usr/bin/env bash
+
+Et je ne saurais trop te recommander l’excellente référence de BASH3 Boilerplate :
+http://bash3boilerplate.sh/
+
+Et l’irremplaçable ShellCheck :
+https://www.shellcheck.net/
+===============================================================================================
+
+
+wget \
+  2>/dev/null \
+  -O- \
+  https://raw.githubusercontent.com/sowebio/acmemgr.sh/master/acmemgr.sh \
+| shellcheck \
+  >shellcheck.txt \
+  -
+
+
+
+-- 
+Léa Gris
+
+shellcheck.txt
+
+
+In - line 53:
+  local TMP_DYNVAR_SUFFIX=$(tr '[a-z]' '[A-Z]'<<< ${1}) # Upper case for name consistency
+        ^-- SC2155: Declare and assign separately to avoid masking return values.
+                               ^-- SC2021: Don't use [] around classes in tr, it replaces literal square brackets.
+                                       ^-- SC2021: Don't use [] around classes in tr, it replaces literal square brackets.
+                                                  ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 57:
+  if [ -n ${2+x} ]; then
+          ^-- SC2070: -n doesn't work with unquoted arguments. Quote or use [[ ]].
+
+
+In - line 59:
+    declare DYNVAR_${DYNVAR_SUFFIX}="${2}" # Create dynamic variable
+                   ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 62:
+    echo "$(TMP_VAR=DYNVAR_${TMP_DYNVAR_SUFFIX} && echo ${!TMP_VAR})"
+         ^-- SC2005: Useless echo? Instead of 'echo $(cmd)', just use 'cmd'.
+                                                        ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 67:
+  log_dbg "DYNVAR_CONTENT  : $(TMP_VAR=DYNVAR_${TMP_DYNVAR_SUFFIX} && echo ${!TMP_VAR})"
+                                                                           ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 83:
+read -n1 -r -p "Press a key to continue..." key
+                                            ^-- SC2034: key appears unused. Verify use (or export if used externally).
+
+
+In - line 96:
+  local LOG_MSG_STRING="[$(date ${LOG_TIMESTAMP})] - ${TASK_NAME} - MESSAGE - ${1}"
+        ^-- SC2155: Declare and assign separately to avoid masking return values.
+                                ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 97:
+  echo ${LOG_MSG_STRING}
+       ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 98:
+  echo ${LOG_MSG_STRING} >> "${LOG_MANAGER_FILE}"
+       ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 115:
+    local LOG_MSG_STRING="[$(date ${LOG_TIMESTAMP})] - ${TASK_NAME} - DEBUG   - ${1}"
+          ^-- SC2155: Declare and assign separately to avoid masking return values.
+                                  ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 116:
+    echo ${LOG_MSG_STRING}
+         ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 117:
+    echo ${LOG_MSG_STRING} >> "${LOG_MANAGER_FILE}"
+         ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 133:
+  local LOG_MSG_STRING="[$(date ${LOG_TIMESTAMP})] - ${TASK_NAME} - ERROR   - ${1}"
+        ^-- SC2155: Declare and assign separately to avoid masking return values.
+                                ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 134:
+  echo ${LOG_MSG_STRING}
+       ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 135:
+  echo ${LOG_MSG_STRING} >> "${LOG_MANAGER_FILE}"
+       ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 150:
+  local ARG_2_STRIPPED=$(tr '\n' ' '<<< ${2})
+        ^-- SC2155: Declare and assign separately to avoid masking return values.
+                                        ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 151:
+  local ARG_3_STRIPPED=$(tr '\n' ' '<<< ${3})
+        ^-- SC2155: Declare and assign separately to avoid masking return values.
+                                        ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 154:
+  echo -e "${3}\n" | mail -a "Content-Type: text/plain; charset=UTF-8" -s "[${MANAGER_NAME}] ${1} - Message : ${2}" ${ACCOUNT_EMAIL}
+               ^-- SC1117: Backslash is literal in "\n". Prefer explicit escaping: "\\n".
+                                                                                                                    ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 169:
+  local ARG_2_STRIPPED=$(tr '\n' ' '<<< ${2})
+        ^-- SC2155: Declare and assign separately to avoid masking return values.
+                                        ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 170:
+  local ARG_3_STRIPPED=$(tr '\n' ' '<<< ${3})
+        ^-- SC2155: Declare and assign separately to avoid masking return values.
+                                        ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 173:
+  echo -e "${3}\n" | mail -a "Content-Type: text/plain; charset=UTF-8" -s "[${MANAGER_NAME}] ${1} - Error : ${2}" ${ACCOUNT_EMAIL}
+               ^-- SC1117: Backslash is literal in "\n". Prefer explicit escaping: "\\n".
+                                                                                                                  ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 216:
+  rm --force ${CERT_DIR}/${DOMAIN_NAME}.cer ${CERT_DIR}/${DOMAIN_NAME}.conf ${CERT_DIR}/${DOMAIN_NAME}.csr ${CERT_DIR}/${DOMAIN_NAME}.csr.conf ${CERT_DIR}/${DOMAIN_NAME}.key ${CERT_DIR}/${CERT_CA} ${CERT_DIR}/${CERT_FULLCHAIN}
+             ^-- SC2086: Double quote to prevent globbing and word splitting.
+                         ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                            ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                        ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                                            ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                                                        ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                                                                           ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                                                                                       ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                                                                                                               ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                                                                                                                           ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                                                                                                                                              ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                                                                                                                                                          ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                                                                                                                                                                     ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                                                                                                                                                                                 ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 219:
+  rmdir ${CERT_DIR}
+        ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 223:
+    mail_msg ${LOCAL_HOST} "Certificate ${DOMAIN_NAME} has been locally deleted." "Success"
+             ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 225:
+    mail_err ${LOCAL_HOST} "Certificate ${DOMAIN_NAME} has not been locally deleted." "Error code : ${RMDIR_RETURN_CODE}."
+             ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 238:
+  source "${CERTOPS_FILE}"
+  ^-- SC1090: Can't follow non-constant source. Use a directive to specify location.
+
+
+In - line 286:
+        DOMAIN_CERT_EXPIRE=$(openssl x509 -dates -noout -in ${DOMAIN_CERT})
+                                                            ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 287:
+        mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has been created." "\nValidity period:\n${DOMAIN_CERT_EXPIRE}"
+                 ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                                              ^-- SC1117: Backslash is literal in "\n". Prefer explicit escaping: "\\n".
+                                                                                                ^-- SC1117: Backslash is literal in "\n". Prefer explicit escaping: "\\n".
+
+
+In - line 293:
+        if [ ${CERTOPS_RETURN_CODE} -eq 0 ]; then
+             ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 294:
+          mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has been successfuly copied." "Host is now tagged to service reload."
+                   ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 301:
+          DB_UPDATE_DATE="$(date ${LOG_TIMESTAMP})" 
+                                 ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 317:
+            mail_msg ${HOST_NAME} "Domain ${DOMAIN_NAME} has been tagged CREATED." "Success"
+                     ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 319:
+            mail_err ${HOST_NAME} "Domain ${DOMAIN_NAME} has not been tagged CREATED." "Error code : ${DB_UPDATE_RETURN_CODE}."
+                     ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 323:
+          mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} has not been copyied." "Error code : ${CERTOPS_RETURN_CODE}."
+                   ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 327:
+        mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} has not been created." "Error code : ${ACME_RETURN_CODE}."
+                 ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 366:
+      DOMAIN_CHECK_4M="10368000" # Four monthes test (for else debugging)
+      ^-- SC2034: DOMAIN_CHECK_4M appears unused. Verify use (or export if used externally).
+
+
+In - line 380:
+        DOMAIN_CERT_EXPIRE=$(openssl x509 -dates -noout -in ${DOMAIN_CERT})
+                                                            ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 381:
+        mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} is not to be renewed." "\nValidity period:\n${DOMAIN_CERT_EXPIRE}"
+                 ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                                                  ^-- SC1117: Backslash is literal in "\n". Prefer explicit escaping: "\\n".
+                                                                                                    ^-- SC1117: Backslash is literal in "\n". Prefer explicit escaping: "\\n".
+
+
+In - line 385:
+        DOMAIN_CERT_EXPIRE=$(openssl x509 -dates -noout -in ${DOMAIN_CERT})
+                                                            ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 386:
+        mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has to be renewed." "\nValidity period:\n${DOMAIN_CERT_EXPIRE}"
+                 ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                                               ^-- SC1117: Backslash is literal in "\n". Prefer explicit escaping: "\\n".
+                                                                                                 ^-- SC1117: Backslash is literal in "\n". Prefer explicit escaping: "\\n".
+
+
+In - line 401:
+          DOMAIN_CERT_EXPIRE=$(openssl x509 -dates -noout -in ${DOMAIN_CERT})
+                                                              ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 402:
+          mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has been renewed." "\nValidity period:\n${DOMAIN_CERT_EXPIRE}"
+                   ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                                                ^-- SC1117: Backslash is literal in "\n". Prefer explicit escaping: "\\n".
+                                                                                                  ^-- SC1117: Backslash is literal in "\n". Prefer explicit escaping: "\\n".
+
+
+In - line 408:
+          if [ ${CERTOPS_RETURN_CODE} -eq 0 ]; then
+               ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 409:
+            mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has been successfuly copied." "Host is now tagged to service reload."
+                     ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 416:
+            DB_UPDATE_DATE="$(date ${LOG_TIMESTAMP})" 
+                                   ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 432:
+              mail_msg ${HOST_NAME} "Domain ${DOMAIN_NAME} has been tagged RENEWED." "Success"
+                       ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 434:
+              mail_err ${HOST_NAME} "Domain ${DOMAIN_NAME} has not been tagged RENEWED." "Error code : ${DB_UPDATE_RETURN_CODE}."
+                       ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 438:
+            mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} has not been copyied." "Error code : ${CERTOPS_RETURN_CODE}."
+                     ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 442:
+          mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} has not been renewed." "Error code : ${ACME_RETURN_CODE}."
+                   ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 479:
+      if [ ${CERTOPS_RETURN_CODE} -eq 0 ]; then
+           ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 480:
+        mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has been successfuly deleted." "Host is now tagged to reload."
+                 ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 487:
+        DB_UPDATE_DATE="$(date ${LOG_TIMESTAMP})" 
+                               ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 503:
+          mail_msg ${HOST_NAME} "Domain ${DOMAIN_NAME} tagged DELETING has been updated as DELETED." "Success"
+                   ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 517:
+            mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has been revoked." "Success"
+                     ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 523:
+            mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} has not been revoked." "Error code : ${ACME_RETURN_CODE}."
+                     ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 527:
+          mail_err ${HOST_NAME} "Domain ${DOMAIN_NAME} tagged DELETING has not been updated as DELETED." "Error code : ${DB_UPDATE_RETURN_CODE}."
+                   ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 531:
+        mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} has not been deleted." "Error code : ${CERTOPS_RETURN_CODE}."
+                 ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 535:
+      mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} do not exists." "Abnormal context, abort deleting"
+               ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 567:
+      if [ ${CERTOPS_RETURN_CODE} -eq 0 ]; then
+           ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 568:
+        mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has been successfuly copied." "Host is now tagged to service reload."
+                 ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 574:
+        mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} has not been copyied." "Error code : ${CERTOPS_RETURN_CODE}."
+                 ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 600:
+  FORMATTED_DOMAIN_NAME=$(pad_string ${DOMAIN_NAME} 40)
+                                     ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 605:
+    DOMAIN_CERT_EXPIRE=$(openssl x509 -dates -noout -in ${DOMAIN_CERT})
+                                                        ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 607:
+    echo -e "${FORMATTED_DOMAIN_NAME} ${FORMATTED_DOMAIN_STATUS}\t $(tr '\n' ' '<<< ${DOMAIN_CERT_EXPIRE})"
+                                                                ^-- SC1117: Backslash is literal in "\t". Prefer explicit escaping: "\\t".
+                                                                                    ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 642:
+    IFS=";" read -ra CURRENT_RECORD <<< ${DOMAINS_NAMES_RECORDS}
+                                        ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 659:
+    elif [ ${HOST_NAME_MEM} != ${HOST_NAME_TMP} ]; then
+           ^-- SC2086: Double quote to prevent globbing and word splitting.
+                               ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 681:
+        ssh -p ${HOST_PORT} ${HOST_LOGIN}@${HOST_FQDN} bash < ${RELOAD_FILE}
+               ^-- SC2086: Double quote to prevent globbing and word splitting.
+                            ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                          ^-- SC2086: Double quote to prevent globbing and word splitting.
+                                                              ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 685:
+          mail_msg ${HOST_NAME} "Service has been reloaded." "Success"
+                   ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 687:
+          mail_err ${HOST_NAME} "Service has not been reloaded." "Error code : ${RELOAD_RETURN_CODE}."
+                   ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 698:
+    if [ ${HOST_NAME_MEM} != "${NULL_VALUE}" ]; then
+         ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 728:
+        source "${ACCOUNT_FILE}"  # Loading ACCOUNT_FILE then read ACCOUNT_DNS01, CERT_HOME & ACCOUNT_EMAIL values
+        ^-- SC1090: Can't follow non-constant source. Use a directive to specify location.
+
+
+In - line 730:
+        mail_err ${HOST_NAME} "File ${ACCOUNT_FILE} not found." "Error"
+                 ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 735:
+        mail_err ${HOST_NAME} "File : ${CERTOPS_FILE} not found." "Error"
+                 ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 740:
+        mail_err ${HOST_NAME} "File : ${RELOAD_FILE} not found." "Error"
+                 ^-- SC2086: Double quote to prevent globbing and word splitting.
+
+
+In - line 838:
+  source "${DB_FILE}"
+  ^-- SC1090: Can't follow non-constant source. Use a directive to specify location.
+

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #----------------------------------------------------------------------------
 # ACMEMGR.SH : an ACME.SH manager using DNS-01 issued LETSENCRYPT certificates
 #

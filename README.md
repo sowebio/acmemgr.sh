@@ -42,6 +42,7 @@ Quick link table
 &nbsp;&nbsp;- [Software](#software)
 &nbsp;&nbsp;- [Documentation](#documentation)
 &nbsp;- [Releases log](#releases-log)
+&nbsp;&nbsp;- [Authors & Contributors](#authors--contributors)
 &nbsp;- [Miscellaneous](#miscellaneous)
 &nbsp;&nbsp;- [Localization](#localization)
 &nbsp;&nbsp;- [Known bugs](#known-bugs)
@@ -125,7 +126,7 @@ Main :
 - Handle wild certificates (like *.domain.tld);
 - When creating certificate which starts with "www." (like "www.domain.tld"), automatically adds the domain name "domain.tld" in certificate;
 - Certificate request for renewal is done only when the current certificate is only valid for one month; 
-- The certificates operations (copy and delete) to distant hosts operations" are fully customizable;
+- The certificates operations (copy and delete) to distant hosts operations are fully customizable;
 - The service linked to the certificate (web or email or whatever) is reloaded only when the certificate is successfully created, renewed or deleted (no reload for no reason);
 - More, the service is restarted only once, even there are more than one  updated certificate linked to the service (one reload only for N certificates depending of the same service on the same host);
 - The reload or restart of the service after certificate update is fully customizable;
@@ -175,36 +176,27 @@ For a more detailed view at the file level, see below the "Multi-accounts tree e
 
 ## Download
 
-[https://stef.genesix.org/pub/acmemgr.sh](https://stef.genesix.org/pub/acmemgr.sh)
+[https://github.com/sowebio/acmemgr.sh](https://github.com/sowebio/acmemgr.sh)
 
 ## Install
 
 ### Base install, for one or many DNS-01 accounts.
 
-Download acme.sh, create some directories and copy some files : 
+Download acme.sh, acmemgr.sh, create some directories and copy some files : 
 
 ```
 root@system: cd /root
 root@system: git clone https://github.com/Neilpang/acme.sh.git
-```
+root@system: git clone https://github.com/Sowebio/acmemgr.sh.git
 
-```
-GITHUB SETUP NOT ALREADY DONE
-# root@system: git clone https://github.com/Sowebio/acmemgr.sh.git
-TEMPORARILY USE THIS DONWNLOAD LINK :
-```
-
-Copy [https://stef.genesix.org/pub/acmemgr.sh](https://stef.genesix.org/pub/acmemgr.sh) content to /root/acmemgr
-
-```
 root@system: mkdir /etc/acme
 root@system: mkdir /var/log/acme
 
-root@system: cp /root/acme/acme.sh /usr/local/bin
-root@system: cp /root/acmemgr/acmemgr.sh /usr/local/bin
-root@system: cp /root/acmemgr/acmemgr.db /etc/acme
-root@system: cp /root/acmemgr/*.certops /etc/acme
-root@system: cp /root/acmemgr/*.reload /etc/acme
+root@system: cp /root/acme.sh/acme.sh /usr/local/bin
+root@system: cp /root/acmemgr.sh/acmemgr.sh /usr/local/bin
+root@system: cp /root/acmemgr.sh/acmemgr.db /etc/acme
+root@system: cp /root/acmemgr.sh/*.certops /etc/acme
+root@system: cp /root/acmemgr.sh/*.reload /etc/acme
 ```
 
 Create /etc.logrotate.d/acme :
@@ -557,16 +549,16 @@ When **acmemgr.sh** is renamed acmemgr.update and placed in /etc/cron.hourly :
 Create a new line in acmemgr.db :
 
 ```
-"rs11domu120;root;domu120v1;61234;ACCOUNT_NAME_THREE;www.domain5.tld"
+"rs11domu120;root;domu120v1;12345;ACCOUNT_NAME_THREE;www.domain5.tld"
 ```
 
 One hour later max, depending of your cron, the certificate is created :
 
 ```
-"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;wwmarkdownw.domain1.tld;CREATED - lundi 12 fevrier 2018, 17:13:11 (UTC+0100)"
+"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.domain1.tld;CREATED - lundi 12 fevrier 2018, 17:13:11 (UTC+0100)"
 ```
 
-Two monts later, more or less one week, the certificated is renewed :
+Two monthes later, more or less one week, the certificated is renewed :
 
 ```
 "rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.domain1.tld;RENEWED - jeudi 26 avril 2018, 18:13:11 (UTC+0100)"
@@ -737,12 +729,17 @@ root@system:source-highlight --line-number --src-lang bash --out-format odf --do
 - 20180315 : **0.8** - sr - When creating certificate which starts with "www." (like "www.domain.tld"), acmemgr.sh automatically adds the domain name "domain.tld" in certificate. Email messages improvements: The subject of the message is more explicit and there is no need, in most cases, to open the message to read it in full. Email messages bug : a success message in renewing was tagged as an error. File example bug : in mailcow_example.certops, the destination certificates files were reversed. Documentation improvements and typos correction. Css style for html rendering has been improved.
 - 20180329 : **0.9** - sr ss - acmemgr.sh and acme.sh now share the same path to certificates. Deleting CERT_ROOT variable, which was statically defined to /etc/acme/certs in acmemgr.sh. acemmgr.sh now uses CERT_HOME, which is defined in each configuration file myaccount.conf of every DNS account. CERT_HOME is used in all acme.sh certificates operation through the --cert-home parameter. Validate wild certificates creation (which was not tested or supported): while the creation itself was successful, the update of acme mgr.db was wrong, because of the special character status of the * (star) character. Check create, renew and revoke cycle with a test wild certificate. Documentation improvements and typos correction. 
 - 20180430 : **1.0** - sr - Documentation improvements and typos correction. Add quick link table. Move to Sowebio Github account.
+- 20190701 : **1.1** - lg sr - <COMING SOON> Lots of fixes and refactors in code with ShellCheck compliance. Change shebang in acmemgr.sh, ./examples/mailcow_reload and ./examples/nginx_example.reload from #!/bin/bash to #!/usr/bin/env bash. Many documentation improvements and typos corrections.
 
-sr : see below **Contact**
+### Authors & Contributors
+
+sr : Stéphane Rivière - see below **Contact**
 
 ss : Somanos Sar - somanos(at)drumee.net : Has pointed out the inconsistencies in defining the certificates directory between amcemgr.sh and acme.sh.
 
-## Miscellaneous
+lg : Léa Gris - lea(at)noireaude.net : Lots of fixes and refactors in code with ShellCheck compliance
+
+## Miscellaneous
 
 ### Localization
 
@@ -764,7 +761,7 @@ Email to : [stef@genesix.org](mailto:stef@genesix.org)
 
 ### Licence
 
-Copyright (C) Stephane Riviere 2017-2018, according to GPLv3 or greater, for [https://soweb.io](https://soweb.io) SARL France.
+Copyright (C) Stephane Riviere 2017-2019, according to GPLv3 or greater, for [https://soweb.io](https://soweb.io) SARL France.
 
 # APPENDICES
 
