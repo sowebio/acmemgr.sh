@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #-------------------------------------------------------------------------------
 # ACMEMGR.SH : an ACME.SH manager using DNS-01 protocol
 #
@@ -10,6 +10,7 @@
 # Author(s)
 #
 # Stephane Riviere - stef[@|.]genesix.org for https://soweb.io SARL - FRANCE
+# Léa Gris - lea(at)noiraude.net
 #
 # This program is licenced GPLv3 or greater.
 #
@@ -27,77 +28,40 @@
 # Initialize
 #-------------------------------------------------------------------------------
 
-MANAGER_DEBUG="false"
-MANAGER_VERSION="1.0"
-MANAGER_NAME="acmemgr"
-ACME_NAME="acme"
+MANAGER_DEBUG='true'
+MANAGER_VERSION='1.1'
+MANAGER_NAME='acmemgr'
+ACME_NAME='acme'
+ACME_COMMAND="${ACME_NAME}.sh"
 
 ETC_DIR="/etc/${ACME_NAME}"
 DB_FILE="${ETC_DIR}/${MANAGER_NAME}.db"
 LOG_ACME_ROOT="/var/log/${ACME_NAME}"
-LOG_MANAGER_FILE="${LOG_ACME_ROOT}/${MANAGER_NAME}.log" 
+LOG_MANAGER_FILE="${LOG_ACME_ROOT}/${MANAGER_NAME}.log"
+
+declare -ri DOMAIN_CHECK_1M="$((60*60*24*30))"       # One month test
+# shellcheck disable=SC2034
+declare -ri DOMAIN_CHECK_4M="$((DOMAIN_CHECK_1M*4))" # Four monthes test (for else debugging)
 
 #-------------------------------------------------------------------------------
 # Service functions
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
-function dynvar()
-#-------------------------------------------------------------------------------
-# Description : Assign or read a dynamic variable
-# Arguments   : ${1} suffix name part (alphanumeric, hyphen and underscore only)
-#               ${2} value (if declare assign, read if missing)
-# Return      : value=$(dynvar("suffix_name_part")
-#-------------------------------------------------------------------------------
-{
-  local TMP_DYNVAR_SUFFIX=$(tr '[a-z]' '[A-Z]'<<< ${1}) # Upper case for name consistency
-  local TMP_VAR=""
-
-  # If ${2} is unset
-  if [ -n ${2+x} ]; then
-    # Declare
-    declare DYNVAR_${DYNVAR_SUFFIX}="${2}" # Create dynamic variable
-  else
-    # Read (previous declaration is not tested)
-    echo "$(TMP_VAR=DYNVAR_${TMP_DYNVAR_SUFFIX} && echo ${!TMP_VAR})"
-  fi
-
-  log_dbg ""
-  log_dbg "DYNVAR_NAME     : DYNVAR_${TMP_DYNVAR_SUFFIX}"
-  log_dbg "DYNVAR_CONTENT  : $(TMP_VAR=DYNVAR_${TMP_DYNVAR_SUFFIX} && echo ${!TMP_VAR})"
-  log_dbg ""
-}
-
-#  declare EXEC_COPY_${DYNVAR_NAME}="${HOST_NAME}.copy" # Create dynamic variable
-#  log_dbg "DYNVAR_NAME     : EXEC_COPY_${DYNVAR_NAME}"
-#  log_dbg "DYNVAR_CONTENT  : $(TMP_VAR=EXEC_COPY_${DYNVAR_NAME} && echo ${!TMP_VAR})"
-
-#-------------------------------------------------------------------------------
-function pause()
-#-------------------------------------------------------------------------------
-# Description : Pause with message "Press a key to continue..."
-# Arguments   :
-# Return      :
-#-------------------------------------------------------------------------------
-{
-read -n1 -r -p "Press a key to continue..." key
-}
-
-#-------------------------------------------------------------------------------
 function log_msg()
 #-------------------------------------------------------------------------------
 # Description : Display and log message
 # Arguments   : ${1} message
+#               ${2} message class (default: MESSAGE)
 # Return      :
 #-------------------------------------------------------------------------------
 {
-  IFS="§" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming
-
-  local LOG_MSG_STRING="[$(date ${LOG_TIMESTAMP})] - ${TASK_NAME} - MESSAGE - ${1}"
-  echo ${LOG_MSG_STRING}
-  echo ${LOG_MSG_STRING} >> "${LOG_MANAGER_FILE}"
-
-  unset IFS # Restore IFS to default space, tab & newline
+  printf '[%s]  - %s  - %s - %s\n' \
+    "$(date "${LOG_TIMESTAMP[@]}")" \
+    "${TASK_NAME}" \
+    "${2:-MESSAGE}" \
+    "${1}" \
+      | tee -a "${LOG_MANAGER_FILE}"
 }
 
 #-------------------------------------------------------------------------------
@@ -108,16 +72,7 @@ function log_dbg()
 # Return      :
 #-------------------------------------------------------------------------------
 {
- if [ "${MANAGER_DEBUG}" = "true" ]; then
-
-    IFS="§" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming
-
-    local LOG_MSG_STRING="[$(date ${LOG_TIMESTAMP})] - ${TASK_NAME} - DEBUG   - ${1}"
-    echo ${LOG_MSG_STRING}
-    echo ${LOG_MSG_STRING} >> "${LOG_MANAGER_FILE}"
-
-    unset IFS # Restore IFS to default space, tab & newline
- fi
+  [[ ${MANAGER_DEBUG} == 'true' ]] && log_msg "${1}" 'DEBUG'
 }
 
 #-------------------------------------------------------------------------------
@@ -128,13 +83,7 @@ function log_err()
 # Return      :
 #-------------------------------------------------------------------------------
 {
-  IFS="§" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming
-
-  local LOG_MSG_STRING="[$(date ${LOG_TIMESTAMP})] - ${TASK_NAME} - ERROR   - ${1}"
-  echo ${LOG_MSG_STRING}
-  echo ${LOG_MSG_STRING} >> "${LOG_MANAGER_FILE}"
-
-  unset IFS  # Restore IFS to default space, tab & newline
+  log_msg "${1}" 'ERROR'
 }
 
 #-------------------------------------------------------------------------------
@@ -147,11 +96,13 @@ function mail_msg()
 # Return      :
 #-------------------------------------------------------------------------------
 {
-  local ARG_2_STRIPPED=$(tr '\n' ' '<<< ${2})
-  local ARG_3_STRIPPED=$(tr '\n' ' '<<< ${3})
-  log_msg "${1} - ${ARG_2_STRIPPED} ${ARG_3_STRIPPED}"
+  log_msg "${1} - ${2//[[:space:]]/ } ${3//[[:space:]]/ }"
 
-  echo -e "${3}\n" | mail -a "Content-Type: text/plain; charset=UTF-8" -s "[${MANAGER_NAME}] ${1} - Message : ${2}" ${ACCOUNT_EMAIL}
+  printf '%s\n\n' "${3}" \
+    | mail \
+      -a 'Content-Type: text/plain; charset=UTF-8' \
+      -s "[${MANAGER_NAME}] ${1} - Message : ${2}" \
+      "${ACCOUNT_EMAIL}"
   log_msg "${LOCAL_HOST} - Wait 2 s for mail sorting in MUA."
   sleep 2
 }
@@ -163,44 +114,42 @@ function mail_err()
 # Arguments   : ${1} : class, example: ${HOST_NAME}
 #               ${2} : subject, example: "Certificate ${DOMAIN_NAME} has not been created"
 #               ${3} : body, example: "Error code : ${ACME_RETURN_CODE}."
-# Return      : 
+# Return      :
 #-------------------------------------------------------------------------------
 {
-  local ARG_2_STRIPPED=$(tr '\n' ' '<<< ${2})
-  local ARG_3_STRIPPED=$(tr '\n' ' '<<< ${3})
-  log_err "${1} - ${ARG_2_STRIPPED} ${ARG_3_STRIPPED}"
+  log_err "${1} - ${2//[[:space:]]/ } ${3//[[:space:]]/ }"
 
-  echo -e "${3}\n" | mail -a "Content-Type: text/plain; charset=UTF-8" -s "[${MANAGER_NAME}] ${1} - Error : ${2}" ${ACCOUNT_EMAIL}
+  printf '%s\n\n' "${3}" \
+    | mail \
+      -a 'Content-Type: text/plain; charset=UTF-8' \
+      -s "[${MANAGER_NAME}] ${1} - Error : ${2}" \
+      "${ACCOUNT_EMAIL}"
   log_msg "${LOCAL_HOST} - Wait 2 s for mail sorting in MUA."
   sleep 2
 }
 
 #-------------------------------------------------------------------------------
-function pad_string()
+function dump_args()
 #-------------------------------------------------------------------------------
-# Description : Display status
-# Arguments   : ${1] : String to pad
-#               ${2] : Pad width
-# Return      : Padded string 
+# Description : dumps passed parameters with quote when needed
+# Arguments   : any number of any-type arguments
+# Return      : space delimited list of passed arguments
 #-------------------------------------------------------------------------------
 {
-  IFS="§" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming
-
-  local CPT=0
-  local SPC=""
-
-  while ((CPT<${2}))
-  do
-  	 ((CPT+=1))
-     SPC="${SPC} "
+  for _ in "${@}"; do
+    printf ' %q' "${_}"
   done
+}
 
-  local TEXT_TO_PAD=${1}
-  local PADDED_TEXT="${TEXT_TO_PAD:0:${2}}${SPC:0:$((${2} - ${#TEXT_TO_PAD}))}"
-
-  echo "${PADDED_TEXT}"
-
-  unset IFS # Restore IFS to default space, tab & newline    
+#-------------------------------------------------------------------------------
+function domain_cert_expire()
+#-------------------------------------------------------------------------------
+# Description : dumps passed parameters with quote when needed
+# Arguments   : ${1}: the domain's x809 certificate file path
+# Return      : domain certificate expiration dates
+#-------------------------------------------------------------------------------
+{
+  openssl x509 -dates -noout -in "${1}"
 }
 
 #-------------------------------------------------------------------------------
@@ -211,18 +160,25 @@ function remove_local_cert()
 # Return      :
 #-------------------------------------------------------------------------------
 {
-  local RMDIR_RETURN_CODE="" 
-
-  rm --force ${CERT_DIR}/${DOMAIN_NAME}.cer ${CERT_DIR}/${DOMAIN_NAME}.conf ${CERT_DIR}/${DOMAIN_NAME}.csr ${CERT_DIR}/${DOMAIN_NAME}.csr.conf ${CERT_DIR}/${DOMAIN_NAME}.key ${CERT_DIR}/${CERT_CA} ${CERT_DIR}/${CERT_FULLCHAIN}
-  # No error test because some files may not exist
-
-  rmdir ${CERT_DIR}
-  RMDIR_RETURN_CODE="${?}"
-
-  if [ ${RMDIR_RETURN_CODE} -eq 0 ]; then
-    mail_msg ${LOCAL_HOST} "Certificate ${DOMAIN_NAME} has been locally deleted." "Success"
+  if find "${CERT_DIR}" \
+    -type f \
+    \( \
+      -regextype posix-extended \
+      -regex "${CERT_DIR}/${DOMAIN_NAME}.(cer|conf|csr|csr.conf|key)" \
+      -or -name "${CERT_CA}" \
+      -or -name "${CERT_FULLCHAIN}" \
+    \) \
+    -delete \
+    && rmdir -- "${CERT_DIR}"; then
+    mail_msg \
+      "${LOCAL_HOST}" \
+      "Certificate ${DOMAIN_NAME} has been locally deleted." \
+      "Success"
   else
-    mail_err ${LOCAL_HOST} "Certificate ${DOMAIN_NAME} has not been locally deleted." "Error code : ${RMDIR_RETURN_CODE}."
+    mail_err \
+      "${LOCAL_HOST}" \
+      "Certificate ${DOMAIN_NAME} has not been locally deleted." \
+      "Error code : ${?}."
   fi
 }
 
@@ -234,10 +190,8 @@ function certops_exec()
 # Return      : Error code (0=success)
 #-------------------------------------------------------------------------------
 {
-  IFS="§" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming
+  # shellcheck source=/dev/null
   source "${CERTOPS_FILE}"
-  echo "${?}"
-  unset IFS # Restore IFS to default space, tab & newline    
 }
 
 #-------------------------------------------------------------------------------
@@ -248,88 +202,103 @@ function create_process()
 # Return      :
 #-------------------------------------------------------------------------------
 {
-  local DOMAIN_CERT_EXPIRE=""
-  local ACME_COMMAND=""
-  local ACME_RETURN_CODE=""
-  local CERTOPS_RETURN_CODE=""  
-  local DB_UPDATE_DATE=""  
-  local DB_UPDATE_COMMAND=""
-  local DB_UPDATE_RETURN_CODE=""  
+  local db_update_date=''
+  local db_update_command=''
 
-  # Test if DOMAIN_STATUS is not RENEWED, DELETING or DELETED 
-  if [ "${DOMAIN_STATUS}" == "${NULL_VALUE}" ]; then
+  # Test if DOMAIN_STATUS is not RENEWED, DELETING or DELETED
+  [[ ${DOMAIN_STATUS} == "${NULL_VALUE}" ]] || return
 
-    # Test if "/etc/acme/certs/DOMAIN_NAME/DOMAIN_NAME.cer" file does not exist (consistency check - if script was interrupted, the directory could exist with some others files)
-    if [ ! -f "${CERT_DIR}/${DOMAIN_NAME}.cer" ];then
+  # Test if "/etc/acme/certs/DOMAIN_NAME/DOMAIN_NAME.cer" file does not exist (consistency check - if script was interrupted, the directory could exist with some others files)
+  if [[ -f "${CERT_DIR}/${DOMAIN_NAME}.cer" ]]; then
+    log_dbg "Certificate ${DOMAIN_NAME} already exists"
+    return 1
+  fi
 
-      # Test if "/etc/acme/certs/DOMAIN_NAME" directory exist (consistency check - if script was interrupted, the directory must be deleted for resync)
-      if [ -d "${CERT_DIR}" ];then
-         remove_local_cert
-      fi  
+  # Test if "/etc/acme/certs/DOMAIN_NAME" directory exist (consistency check - if script was interrupted, the directory must be deleted for resync)
+  [[ -d ${CERT_DIR} ]] && remove_local_cert
 
-      # /usr/local/bin/acme.sh --home /etc/acme/<account_name> --config-home /etc/acme/<account_name> --cert-home <cert_home> --dns <account_dns01> --issue --domain <domain_name>
-      ACME_COMMAND="${ACME_NAME}.sh --home ${HOME_DIR} --config-home ${HOME_DIR} --cert-home ${CERT_HOME} --log ${LOG_ACME_ROOT}/${ACCOUNT_NAME}.log --dns ${ACCOUNT_DNS01} --issue --domain ${DOMAIN_NAME}"
+  # /usr/local/bin/acme.sh --home /etc/acme/<account_name> --config-home /etc/acme/<account_name> --cert-home <cert_home> --dns <account_dns01> --issue --domain <domain_name>
+  local -a acme_params=(
+    --home "${HOME_DIR}"
+    --config-home "${HOME_DIR}"
+    --cert-home "${CERT_HOME}"
+    --log "${LOG_ACME_ROOT}/${ACCOUNT_NAME}.log"
+    --dns "${ACCOUNT_DNS01}"
+    --issue
+    --domain "${DOMAIN_NAME}"
+  )
 
-      # A domain name beginning by "[www.]domain.tld" gets an extra "domain.tld" in certificate.
-      if [ "${DOMAIN_NAME:0:4}" == "www." ]; then
-         ACME_COMMAND="${ACME_COMMAND} --domain ${DOMAIN_NAME:4}"
-      fi
+  # A domain name beginning by "[www.]domain.tld" gets an extra "domain.tld" in certificate.
+  [[ ${DOMAIN_NAME:0:4} == 'www.' ]] && acme_params+=(--domain "${DOMAIN_NAME:4}")
 
-      #--------------------------:
-      log_dbg "ACME_COMMAND      : ${ACME_COMMAND}"
+  #--------------------------:
+  log_dbg "ACME_COMMAND      : ${ACME_COMMAND} $(dump_args "${acme_params[@]}")"
 
-      ${ACME_COMMAND}
-      ACME_RETURN_CODE="${?}"
+  if ! "${ACME_COMMAND}" "${acme_params[@]}"; then
+    mail_err \
+      "${HOST_NAME}" \
+      "Certificate ${DOMAIN_NAME} has not been created." \
+      "Error code : ${?}."
+    return 1
+  fi
 
-      if [ ${ACME_RETURN_CODE} -eq 0 ]; then
+  local domain_cert_expire
+  domain_cert_expire="$(
+    openssl \
+      x509 \
+      -dates \
+      -noout \
+      -in "${DOMAIN_CERT}"
+  )"
+  mail_msg \
+    "${HOST_NAME}" \
+    "Certificate ${DOMAIN_NAME} has been created." \
+    "Validity period:\\n${domain_cert_expire}"
 
-        DOMAIN_CERT_EXPIRE=$(openssl x509 -dates -noout -in ${DOMAIN_CERT})
-        mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has been created." "\nValidity period:\n${DOMAIN_CERT_EXPIRE}"
+  # Copy certificates - Execution of /etc/acme/<host>.certops content
 
-        # Copy certificates - Execution of /etc/acme/<host>.certops content
+  if ! certops_exec; then
+    mail_err \
+      "${HOST_NAME}" \
+      "Certificate ${DOMAIN_NAME} has not been copyied." \
+      "Error code : ${?}."
+    return 1
+  fi
 
-        CERTOPS_RETURN_CODE=$(certops_exec) 
+  # Reload the server configuration
+  SERVICE_RESTART='true'
 
-        if [ ${CERTOPS_RETURN_CODE} -eq 0 ]; then
-          mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has been successfuly copied." "Host is now tagged to service reload."
+  mail_msg \
+    "${HOST_NAME}" \
+    "Certificate ${DOMAIN_NAME} has been successfuly copied." \
+    "Host is now tagged to service reload."
 
-          # Reload the server configuration
-          SERVICE_RESTART="true"
+  db_update_date="$(date "${LOG_TIMESTAMP[@]}")"
 
-          IFS="§" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming
+  # Before : "DOM_UNAME;HOST_LOGIN;HOST_FQDN,HOST_PORT;ACCOUNT_NAME;SERVICE_NAME;DOMAIN_NAME"
+  # After  : "DOM_UNAME;HOST_LOGIN;HOST_FQDN,HOST_PORT;ACCOUNT_NAME;SERVICE_NAME;DOMAIN_NAME;CREATED - lundi 12 février 2018, 11:47:46 (UTC+0100)"
+  db_update_command="s/${DOMAIN_NAME}/${DOMAIN_NAME};${DOMAIN_STATUS_CREATED} - ${db_update_date}/"
 
-          DB_UPDATE_DATE="$(date ${LOG_TIMESTAMP})" 
+  #--------------------------:
+  log_dbg "DB_FILE_REP._CMD. : ${db_update_command}"
 
-          # Before : "DOM_UNAME;HOST_LOGIN;HOST_FQDN,HOST_PORT;ACCOUNT_NAME;SERVICE_NAME;DOMAIN_NAME"
-          # After  : "DOM_UNAME;HOST_LOGIN;HOST_FQDN,HOST_PORT;ACCOUNT_NAME;SERVICE_NAME;DOMAIN_NAME;CREATED - lundi 12 février 2018, 11:47:46 (UTC+0100)"
-          DB_UPDATE_COMMAND="s/${DOMAIN_NAME}/${DOMAIN_NAME};${DOMAIN_STATUS_CREATED} - ${DB_UPDATE_DATE}/"
+  # When sed launched in bash, must use double quote instead of single quote
 
-          #--------------------------:
-          log_dbg "DB_FILE_REP._CMD. : ${DB_UPDATE_COMMAND}"
+  if ! sed \
+      -i.bak \
+      "${db_update_command}" \
+      "${DB_FILE}"; then
+    mail_err \
+      "${HOST_NAME}" \
+      "Domain ${DOMAIN_NAME} has not been tagged CREATED." \
+      "Error code : ${?}."
+      return 1
+  fi
 
-          # When sed launched in bash, must use double quote instead of single quote
-          sed -i.bak "${DB_UPDATE_COMMAND}" ${DB_FILE}
-          DB_UPDATE_RETURN_CODE="${?}"
-
-          unset IFS # Restore IFS to default space, tab & newline
-
-          if [ ${DB_UPDATE_RETURN_CODE} -eq 0 ]; then
-            mail_msg ${HOST_NAME} "Domain ${DOMAIN_NAME} has been tagged CREATED." "Success"
-          else
-            mail_err ${HOST_NAME} "Domain ${DOMAIN_NAME} has not been tagged CREATED." "Error code : ${DB_UPDATE_RETURN_CODE}."
-          fi
-
-        else
-          mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} has not been copyied." "Error code : ${CERTOPS_RETURN_CODE}."
-        fi
-
-      else
-        mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} has not been created." "Error code : ${ACME_RETURN_CODE}."
-      fi
-    else
-       log_dbg "Certificate ${DOMAIN_NAME} already exists"
-    fi
-  fi  
+  mail_msg \
+    "${HOST_NAME}" \
+    "Domain ${DOMAIN_NAME} has been tagged CREATED." \
+    'Success'
 }
 
 #-------------------------------------------------------------------------------
@@ -340,115 +309,146 @@ function renew_process()
 # Return      :
 #-------------------------------------------------------------------------------
 {
-  local DOMAIN_CHECK_4M=""
-  local DOMAIN_CHECK_1M=""
-  local DOMAIN_CHECK_COMMAND=""
-  local DOMAIN_CHECK_RETURN_CODE=""
-  local DOMAIN_CERT_EXPIRE=""
-  local CERTOPS_RETURN_CODE=""  
-  local DB_UPDATE_DATE=""  
-  local DB_UPDATE_COMMAND=""
-  local DB_UPDATE_RETURN_CODE=""    
-  local ACME_COMMAND=""
-  local ACME_RETURN_CODE=""  
 
   # Test if DOMAIN_STATUS is CREATED or RENEWED
-  if [ "${DOMAIN_STATUS:0:7}" == "${DOMAIN_STATUS_CREATED:0:7}" ] ||
-     [ "${DOMAIN_STATUS:0:7}" == "${DOMAIN_STATUS_RENEWED:0:7}" ] ; then
+  [[ ${DOMAIN_STATUS:0:7} == "${DOMAIN_STATUS_CREATED:0:7}" \
+  || ${DOMAIN_STATUS:0:7} == "${DOMAIN_STATUS_RENEWED:0:7}" ]] || return
 
-    # Test if certificate directory exist
-    if [ -d "${CERT_DIR}" ];then
+  # Test if certificate directory exist
+  if [[ ! -d ${CERT_DIR} ]]; then
+    log_dbg "Certificate ${DOMAIN_NAME} do not exists"
+    return 1
+  fi
 
-       # Force renew for tests purposes > Invert commented lines :
-      # - DOMAIN_CHECK_COMMAND
-      # - ACME_COMMAND
+  # Force renew for tests purposes > Invert commented lines :
+  # - DOMAIN_CHECK_COMMAND
+  # - ACME_COMMAND
 
-      DOMAIN_CHECK_4M="10368000" # Four monthes test (for else debugging)
-      DOMAIN_CHECK_1M="2592000"  # One month test
+  # NORMAL OPERATION
+  local -a domain_check_params=(
+    x509
+    -checkend "${DOMAIN_CHECK_1M}"
+    -noout
+    -in "${DOMAIN_CERT}"
+  )
 
-     DOMAIN_CHECK_COMMAND="openssl x509 -checkend ${DOMAIN_CHECK_1M} -noout -in ${DOMAIN_CERT}" # NORMAL OPERATION
-     #DOMAIN_CHECK_COMMAND="openssl x509 -checkend ${DOMAIN_CHECK_4M} -noout -in ${DOMAIN_CERT}" # FORCE RENEW FOR TESTS PURPOSES
+  # FORCE RENEW FOR TESTS PURPOSES
+  #local -a domain_check_params=( x509 -checkend "${DOMAIN_CHECK_4M}" -noout -in "${DOMAIN_CERT}" )
 
-      #--------------------------:
-      log_dbg "DOMAIN_CHECK_CMD. : ${DOMAIN_CHECK_COMMAND}"
+  #--------------------------:
 
-      ${DOMAIN_CHECK_COMMAND}
-      DOMAIN_CHECK_RETURN_CODE="${?}"
+  log_dbg "DOMAIN_CHECK_CMD. : openssl $(dump_args "${domain_check_params[@]}")"
 
-      if [ ${DOMAIN_CHECK_RETURN_CODE} -eq 0 ]; then
+  openssl "${domain_check_params[@]}"
 
-        DOMAIN_CERT_EXPIRE=$(openssl x509 -dates -noout -in ${DOMAIN_CERT})
-        mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} is not to be renewed." "\nValidity period:\n${DOMAIN_CERT_EXPIRE}"
+  local domain_cert_expire
+  domain_cert_expire="$(
+    openssl \
+      x509 \
+      -dates \
+      -noout \
+      -in "${DOMAIN_CERT}"
+  )"
 
-      else
-  
-        DOMAIN_CERT_EXPIRE=$(openssl x509 -dates -noout -in ${DOMAIN_CERT})
-        mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has to be renewed." "\nValidity period:\n${DOMAIN_CERT_EXPIRE}"
+  if openssl "${domain_check_params[@]}" \
+     && [[ ${EMAIL_EVEN_NOT_RENEWED} -eq 1 ]]; then
 
-        # /usr/local/bin/acme.sh --home /etc/acme/<account_name> --config-home /etc/acme/<account_name> --cert-home <cert_home> --dns <account_dns01> --renew --domain <domain_name>
+    mail_msg \
+      "${HOST_NAME}" \
+      "Certificate ${DOMAIN_NAME} is not to be renewed." \
+      "\\nValidity period:\\n${domain_cert_expire}"
+    return
+  fi
 
-       ACME_COMMAND="${ACME_NAME}.sh --home ${HOME_DIR} --config-home ${HOME_DIR} --cert-home ${CERT_HOME} --log ${LOG_ACME_ROOT}/${ACCOUNT_NAME}.log --dns ${ACCOUNT_DNS01} --renew --domain ${DOMAIN_NAME}"         # NORMAL OPERATION
-       #ACME_COMMAND="${ACME_NAME}.sh --home ${HOME_DIR} --config-home ${HOME_DIR} --cert-home ${CERT_HOME} --log ${LOG_ACME_ROOT}/${ACCOUNT_NAME}.log --dns ${ACCOUNT_DNS01} --force --renew --domain ${DOMAIN_NAME}" # FORCE RENEW FOR TESTS PURPOSES
+  mail_msg \
+    "${HOST_NAME}" \
+    "Certificate ${DOMAIN_NAME} has to be renewed." \
+    "\\nValidity period:\\n${domain_cert_expire}"
 
-        #--------------------------:
-        log_dbg "ACME_COMMAND      : ${ACME_COMMAND}"
+  # /usr/local/bin/acme.sh --home /etc/acme/<account_name> --config-home /etc/acme/<account_name> --cert-home <cert_home> --dns <account_dns01> --renew --domain <domain_name>
 
-        ${ACME_COMMAND}
-        ACME_RETURN_CODE="${?}"
+  # NORMAL OPERATION
+  local -a acme_params=(
+    --home "${HOME_DIR}"
+    --config-home "${HOME_DIR}"
+    --cert-home "${CERT_HOME}"
+    --log "${LOG_ACME_ROOT}/${ACCOUNT_NAME}.log"
+    --dns "${ACCOUNT_DNS01}"
+    --renew
+    --domain "${DOMAIN_NAME}"
+  )
 
-        if [ ${ACME_RETURN_CODE} -eq 0 ]; then
+  # FORCE RENEW FOR TESTS PURPOSES
+  #local acme_params=( --home "${HOME_DIR}" --config-home "${HOME_DIR}" --cert-home "${CERT_HOME}" --log "${LOG_ACME_ROOT}/${ACCOUNT_NAME}.log" --dns "${ACCOUNT_DNS01}" --force --renew --domain "${DOMAIN_NAME}" )
 
-          DOMAIN_CERT_EXPIRE=$(openssl x509 -dates -noout -in ${DOMAIN_CERT})
-          mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has been renewed." "\nValidity period:\n${DOMAIN_CERT_EXPIRE}"
+  #--------------------------:
+  log_dbg "ACME_COMMAND      : ${ACME_COMMAND} $(dump_args "${acme_params[@]}")"
 
-          # Copy certificates - Execution of /etc/acme/<host>.certops content
- 
-          CERTOPS_RETURN_CODE=$(certops_exec)
+  if ! "${ACME_COMMAND}" "${acme_params[@]}"; then
+    mail_err \
+      "${HOST_NAME}" \
+      "Certificate ${DOMAIN_NAME} has not been renewed." \
+      "Error code : ${?}."
+    return 1
+  fi
 
-          if [ ${CERTOPS_RETURN_CODE} -eq 0 ]; then
-            mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has been successfuly copied." "Host is now tagged to service reload."
+  domain_cert_expire="$(
+    openssl \
+    x509 \
+    -dates \
+    -noout \
+    -in "${DOMAIN_CERT}"
+  )"
+  mail_msg \
+    "${HOST_NAME}" \
+    "Certificate ${DOMAIN_NAME} has been renewed." \
+    "\\nValidity period:\\n${domain_cert_expire}"
 
-            # Reload the server configuration
-            SERVICE_RESTART="true"
+  # Copy certificates - Execution of /etc/acme/<host>.certops content
 
-            IFS="§" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming
+  if ! certops_exec; then
+    mail_err \
+      "${HOST_NAME}" \
+      "Certificate ${DOMAIN_NAME} has not been copyied." \
+      "Error code : ${?}."
+    return 1
+  fi
 
-            DB_UPDATE_DATE="$(date ${LOG_TIMESTAMP})" 
+  # Reload the server configuration
+  SERVICE_RESTART='true'
 
-            # Before : "DOM_UNAME;HOST_LOGIN;HOST_FQDN,HOST_PORT;ACCOUNT_NAME;SERVICE_NAME;DOMAIN_NAME;CREATED || RENEWED"
-            # After  : "DOM_UNAME;HOST_LOGIN;HOST_FQDN,HOST_PORT;ACCOUNT_NAME;SERVICE_NAME;DOMAIN_NAME;RENEWED - lundi 12 février 2018, 11:47:46 (UTC+0100)"
-            DB_UPDATE_COMMAND="s/${DOMAIN_NAME};${DOMAIN_STATUS}/${DOMAIN_NAME};${DOMAIN_STATUS_RENEWED} - ${DB_UPDATE_DATE}/"
+  mail_msg \
+    "${HOST_NAME}" \
+    "Certificate ${DOMAIN_NAME} has been successfuly copied." \
+    "Host is now tagged to service reload."
 
-            #--------------------------:
-            log_dbg "DB_FILE_REP._CMD. : ${DB_UPDATE_COMMAND}"
+  local db_update_date
+  db_update_date="$(date "${LOG_TIMESTAMP[@]}")"
 
-            # When sed launched in bash, must use double quote instead of single quote
-            sed -i.bak "${DB_UPDATE_COMMAND}" ${DB_FILE}
-            DB_UPDATE_RETURN_CODE="${?}"
+  # Before : "DOM_UNAME;HOST_LOGIN;HOST_FQDN,HOST_PORT;ACCOUNT_NAME;SERVICE_NAME;DOMAIN_NAME;CREATED || RENEWED"
+  # After  : "DOM_UNAME;HOST_LOGIN;HOST_FQDN,HOST_PORT;ACCOUNT_NAME;SERVICE_NAME;DOMAIN_NAME;RENEWED - lundi 12 février 2018, 11:47:46 (UTC+0100)"
+  local db_update_command="s/${DOMAIN_NAME};${DOMAIN_STATUS}/${DOMAIN_NAME};${DOMAIN_STATUS_RENEWED} - ${db_update_date}/"
 
-            unset IFS # Restore IFS to default space, tab & newline
+  #--------------------------:
+  log_dbg "DB_FILE_REP._CMD. : ${db_update_command}"
 
-            if [ ${DB_UPDATE_RETURN_CODE} -eq 0 ]; then
-              mail_msg ${HOST_NAME} "Domain ${DOMAIN_NAME} has been tagged RENEWED." "Success"
-            else
-              mail_err ${HOST_NAME} "Domain ${DOMAIN_NAME} has not been tagged RENEWED." "Error code : ${DB_UPDATE_RETURN_CODE}."
-            fi
+  # When sed launched in bash, must use double quote instead of single quote
 
-          else
-            mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} has not been copyied." "Error code : ${CERTOPS_RETURN_CODE}."
-          fi
+  if ! sed \
+    -i.bak \
+    "${db_update_command}" \
+    "${DB_FILE}"; then
+    mail_err \
+      "${HOST_NAME}" \
+      "Domain ${DOMAIN_NAME} has not been tagged RENEWED." \
+      "Error code : ${?}."
+    return 1
+  fi
 
-        else
-          mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} has not been renewed." "Error code : ${ACME_RETURN_CODE}."
-        fi
-
-      fi
-
-    else
-       log_dbg "Certificate ${DOMAIN_NAME} do not exists"
-    fi
-
-  fi  
+  mail_msg \
+    "${HOST_NAME}" \
+    "Domain ${DOMAIN_NAME} has been tagged RENEWED." \
+    "Success"
 }
 
 #-------------------------------------------------------------------------------
@@ -459,83 +459,99 @@ function delete_process()
 # Return      :
 #-------------------------------------------------------------------------------
 {
-  local CERTOPS_RETURN_CODE=""  
-  local DB_UPDATE_DATE=""  
-  local DB_UPDATE_COMMAND=""
-  local DB_UPDATE_RETURN_CODE=""  
-  local ACME_COMMAND=""  
-  local ACME_RETURN_CODE="" 
+  local db_update_date=''
+  local db_update_command=''
+  local -a acme_params=()
 
-  if [ "${DOMAIN_STATUS:0:7}" == "${DOMAIN_STATUS_DELETING:0:7}" ]; then
+  [[ ${DOMAIN_STATUS:0:7} == "${DOMAIN_STATUS_DELETING:0:7}" ]] || return 1
 
-    # Check if certificate directory exist
-    if [ -d "${CERT_DIR}" ];then
-
-      # We don't check if the directory contains the expected files because a previous script interruption could
-      # leave this directory in an undefined state. The right way is to erase the directory, whatever its contents.
-
-      CERTOPS_RETURN_CODE=$(certops_exec)
-
-      if [ ${CERTOPS_RETURN_CODE} -eq 0 ]; then
-        mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has been successfuly deleted." "Host is now tagged to reload."
-
-        # Reload the server configuration
-        SERVICE_RESTART="true"
-
-        IFS="§" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming
-
-        DB_UPDATE_DATE="$(date ${LOG_TIMESTAMP})" 
-
-        # Before : "DOM_UNAME;HOST_LOGIN;HOST_FQDN,HOST_PORT;ACCOUNT_NAME;SERVICE_NAME;DOMAIN_NAME;DELETING"
-        # After  : "DOM_UNAME;HOST_LOGIN;HOST_FQDN,HOST_PORT;ACCOUNT_NAME;SERVICE_NAME;DOMAIN_NAME;DELETED - lundi 12 février 2018, 11:47:46 (UTC+0100)"
-        DB_UPDATE_COMMAND="s/${DOMAIN_NAME};${DOMAIN_STATUS}/${DOMAIN_NAME};${DOMAIN_STATUS_DELETED} - ${DB_UPDATE_DATE}/"
-
-        #--------------------------:
-        log_dbg "DB_FILE_REP._CMD. : ${DB_UPDATE_COMMAND}"
-
-        # When sed launched in bash, must use double quote instead of single quote
-        sed -i.bak "${DB_UPDATE_COMMAND}" ${DB_FILE}
-        DB_UPDATE_RETURN_CODE="${?}"
-
-        unset IFS # Restore IFS to default space, tab & newline
-
-        if [ ${DB_UPDATE_RETURN_CODE} -eq 0 ]; then
-          mail_msg ${HOST_NAME} "Domain ${DOMAIN_NAME} tagged DELETING has been updated as DELETED." "Success"
-
-          # Revoking is done inner because the main goal is to delete
-          
-          # /usr/local/bin/acme.sh --home /etc/acme/<account_name> --config-home /etc/acme/<account_name> --cert-home <cert_home> --dns <account_dns01> --renew --domain <domain_name>
-          ACME_COMMAND="${ACME_NAME}.sh --home ${HOME_DIR} --config-home ${HOME_DIR} --cert-home ${CERT_HOME} --log ${LOG_ACME_ROOT}/${ACCOUNT_NAME}.log --dns ${ACCOUNT_DNS01} --revoke --domain ${DOMAIN_NAME}"
-
-          #--------------------------:
-          log_dbg "ACME_COMMAND      : ${ACME_COMMAND}"
-
-          ${ACME_COMMAND}
-          ACME_RETURN_CODE="${?}"
-
-          if [ ${ACME_RETURN_CODE} -eq 0 ]; then
-            mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has been revoked." "Success"
-
-            # Remove local certificate
-            remove_local_cert
-
-          else
-            mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} has not been revoked." "Error code : ${ACME_RETURN_CODE}."
-          fi
-
-        else
-          mail_err ${HOST_NAME} "Domain ${DOMAIN_NAME} tagged DELETING has not been updated as DELETED." "Error code : ${DB_UPDATE_RETURN_CODE}."
-        fi
-
-      else
-        mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} has not been deleted." "Error code : ${CERTOPS_RETURN_CODE}."
-      fi
-
-    else
-      mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} do not exists." "Abnormal context, abort deleting"
-    fi
-
+  # Check if certificate directory exist
+  if [[ ! -d ${CERT_DIR} ]]; then
+    mail_err \
+      "${HOST_NAME}" \
+      "Certificate ${DOMAIN_NAME} do not exists." \
+      "Abnormal context, abort deleting"
+      return 1
   fi
+
+  # We don't check if the directory contains the expected files because a
+  # previous script interruption could leave this directory in an undefined
+  # state.
+  # The right way is to erase the directory, whatever its contents.
+
+  if ! certops_exec; then
+    mail_err \
+      "${HOST_NAME}" \
+      "Domain ${DOMAIN_NAME} tagged DELETING has not been updated as DELETED." \
+      "Error code : ${?}."
+    return 1
+  fi
+  mail_msg \
+    "${HOST_NAME}" \
+    "Certificate ${DOMAIN_NAME} has been successfuly deleted." \
+    "Host is now tagged to reload."
+
+  # Reload the server configuration
+  SERVICE_RESTART='true'
+
+  db_update_date="$(date "${LOG_TIMESTAMP[@]}")"
+
+  # Before : "DOM_UNAME;HOST_LOGIN;HOST_FQDN,HOST_PORT;ACCOUNT_NAME;SERVICE_NAME;DOMAIN_NAME;DELETING"
+  # After  : "DOM_UNAME;HOST_LOGIN;HOST_FQDN,HOST_PORT;ACCOUNT_NAME;SERVICE_NAME;DOMAIN_NAME;DELETED - lundi 12 février 2018, 11:47:46 (UTC+0100)"
+  db_update_command="s/${DOMAIN_NAME};${DOMAIN_STATUS}/${DOMAIN_NAME};${DOMAIN_STATUS_DELETED} - ${db_update_date}/"
+
+  #--------------------------:
+  log_dbg "DB_FILE_REP._CMD. : ${db_update_command}"
+
+  # When sed launched in bash, must use double quote instead of single quote
+
+  if ! sed \
+      -i.bak \
+      "${db_update_command}" \
+      "${DB_FILE}"; then
+    mail_err \
+      "${HOST_NAME}" \
+      "Certificate ${DOMAIN_NAME} has not been deleted." \
+      "Error code : ${?}."
+    return 1
+  fi
+
+  mail_msg \
+    "${HOST_NAME}" \
+    "Domain ${DOMAIN_NAME} tagged DELETING has been updated as DELETED." \
+    "Success"
+
+  # Revoking is done inner because the main goal is to delete
+
+  # /usr/local/bin/acme.sh --home /etc/acme/<account_name> --config-home /etc/acme/<account_name> --cert-home <cert_home> --dns <account_dns01> --renew --domain <domain_name>
+  acme_params=(
+    --home "${HOME_DIR}"
+    --config-home "${HOME_DIR}"
+    --cert-home "${CERT_HOME}"
+    --log "${LOG_ACME_ROOT}/${ACCOUNT_NAME}.log"
+    --dns "${ACCOUNT_DNS01}"
+    --revoke
+    --domain "${DOMAIN_NAME}"
+  )
+
+  #--------------------------:
+  log_dbg "ACME_COMMAND      : ${ACME_COMMAND} $(dump_args "${acme_params[@]}")"
+
+  if ! "${ACME_COMMAND}" "${acme_params[@]}"; then
+    mail_err \
+      "${HOST_NAME}" \
+      "Certificate ${DOMAIN_NAME} has not been revoked." \
+      "Error code : ${?}."
+    return 1
+  fi
+
+  mail_msg \
+    "${HOST_NAME}" \
+    "Certificate ${DOMAIN_NAME} has been revoked." \
+    "Success"
+
+  # Remove local certificate
+  remove_local_cert
 }
 
 #-------------------------------------------------------------------------------
@@ -546,37 +562,33 @@ function copy_process()
 # Return      :
 #-------------------------------------------------------------------------------
 {
-  local CERTOPS_RETURN_CODE=""  
 
   # Test if DOMAIN_STATUS is not DELETING or DELETED
-  if [ "${DOMAIN_STATUS:0:7}" == "${DOMAIN_STATUS_CREATED:0:7}" ] ||
-     [ "${DOMAIN_STATUS:0:7}" == "${DOMAIN_STATUS_RENEWED:0:7}" ] ; then
+  [[ ${DOMAIN_STATUS:0:7} == "${DOMAIN_STATUS_CREATED:0:7}" \
+  || ${DOMAIN_STATUS:0:7} == "${DOMAIN_STATUS_RENEWED:0:7}" ]] || return
 
-    # Test if "/etc/acme/certs/DOMAIN_NAME/DOMAIN_NAME.cer" file exist (consistency check - if script was interrupted, the directory could exist with some others files)
-    if [ -f "${CERT_DIR}/${DOMAIN_NAME}.cer" ];then
-    
-     # Copy certificates - Execution of /etc/acme/<host>.certops content
+  # Test if "/etc/acme/certs/DOMAIN_NAME/DOMAIN_NAME.cer" file exist (consistency check - if script was interrupted, the directory could exist with some others files)
+  [[ -f "${CERT_DIR}/${DOMAIN_NAME}.cer" ]] || return
 
-     # IFS="§" # Set internal shell variable $IFS (Internal Field Separator) to avoid space trimming
-     # source "${CERTOPS_FILE}"
-     # CERTOPS_RETURN_CODE="${?}"
-     # unset IFS # Restore IFS to default space, tab & newline    
+  # Copy certificates - Execution of /etc/acme/<host>.certops content
 
-      CERTOPS_RETURN_CODE=$(certops_exec)
+  # source "${CERTOPS_FILE}"
 
-      if [ ${CERTOPS_RETURN_CODE} -eq 0 ]; then
-        mail_msg ${HOST_NAME} "Certificate ${DOMAIN_NAME} has been successfuly copied." "Host is now tagged to service reload."
+  if ! certops_exec; then
+    mail_err \
+      "${HOST_NAME}" \
+      "Certificate ${DOMAIN_NAME} has not been copyied." \
+      "Error code : ${?}."
+    return 1
+  fi
 
-        # Reload the server configuration
-        SERVICE_RESTART="true"
+  # Reload the server configuration
+  SERVICE_RESTART='true'
 
-      else
-        mail_err ${HOST_NAME} "Certificate ${DOMAIN_NAME} has not been copyied." "Error code : ${CERTOPS_RETURN_CODE}."
-      fi
-
-    fi
-
-  fi 
+  mail_msg \
+    "${HOST_NAME}" \
+    "Certificate ${DOMAIN_NAME} has been successfuly copied." \
+    "Host is now tagged to service reload."
 }
 
 #-------------------------------------------------------------------------------
@@ -587,32 +599,41 @@ function status_process()
 # Return      :
 #-------------------------------------------------------------------------------
 {
-  local DOMAIN_CERT_EXPIRE="" 
-  local FORMATTED_DOMAIN_NAME=""
-  local FORMATTED_DOMAIN_STATUS=""
+  local domain_cert_expire=''
+  local FORMATTED_DOMAIN_NAME=''
+  local FORMATTED_DOMAIN_STATUS=''
 
-  if [ "${TASK_NAME}" == "STATUS" ] ; then
-    FORMATTED_DOMAIN_STATUS=${DOMAIN_STATUS:0:8}
+  if [[ ${TASK_NAME} == 'STATUS' ]]; then
+    FORMATTED_DOMAIN_STATUS="${DOMAIN_STATUS:0:8}"
   else
-    FORMATTED_DOMAIN_STATUS=${DOMAIN_STATUS}
+    FORMATTED_DOMAIN_STATUS="${DOMAIN_STATUS}"
   fi
 
-  FORMATTED_DOMAIN_NAME=$(pad_string ${DOMAIN_NAME} 40)
+  FORMATTED_DOMAIN_NAME="$(printf '%40s%s' '' "${DOMAIN_NAME}")"
 
-  if [ "${DOMAIN_STATUS:0:7}" == "${DOMAIN_STATUS_CREATED:0:7}" ] ||
-     [ "${DOMAIN_STATUS:0:7}" == "${DOMAIN_STATUS_RENEWED:0:7}" ] ; then
+  if [[ ${DOMAIN_STATUS:0:7} == "${DOMAIN_STATUS_CREATED:0:7}" \
+     || ${DOMAIN_STATUS:0:7} == "${DOMAIN_STATUS_RENEWED:0:7}" ]]; then
 
-    DOMAIN_CERT_EXPIRE=$(openssl x509 -dates -noout -in ${DOMAIN_CERT})
+    domain_cert_expire="$(
+      openssl \
+      x509 \
+      -dates \
+      -noout \
+      -in "${DOMAIN_CERT}"
+    )"
 
-    echo -e "${FORMATTED_DOMAIN_NAME} ${FORMATTED_DOMAIN_STATUS}\t $(tr '\n' ' '<<< ${DOMAIN_CERT_EXPIRE})"
+    printf '%s %s\t%s\n' \
+      "${FORMATTED_DOMAIN_NAME}" \
+      "${FORMATTED_DOMAIN_STATUS}" \
+      "${domain_cert_expire//[[:space:]]/ }"
 
-  elif [ "${DOMAIN_STATUS}" == "${NULL_VALUE}" ] ; then
+  elif [[ ${DOMAIN_STATUS} == "${NULL_VALUE}" ]]; then
 
-    echo -e "${FORMATTED_DOMAIN_NAME} CREATION (in progress)"
+    printf '%s CREATION (in progress)\n' "${FORMATTED_DOMAIN_NAME}"
 
   else
-  
-    echo -e "${FORMATTED_DOMAIN_NAME} ${FORMATTED_DOMAIN_STATUS}"
+
+    printf '%s %s\n' "${FORMATTED_DOMAIN_NAME}" "${FORMATTED_DOMAIN_STATUS}"
 
   fi
 }
@@ -621,55 +642,79 @@ function status_process()
 function main_process()
 #-------------------------------------------------------------------------------
 # Description : Read domains names database and dispatch processes
-# Arguments   :
+# Arguments   : ${1} TASK_NAME
 # Return      :
 #-------------------------------------------------------------------------------
 {
-  HOST_NAME_MEM="${NULL_VALUE}"
-  TASK_NAME=$1
+  (($#==1)) || return 1 # ${TASK_NAME} required
+  local TASK_NAME="${1}"
+  local HOST_NAME_MEM="${NULL_VALUE}"
 
-  if [ "${TASK_NAME}" == "STATUS" ] ||
-     [ "${TASK_NAME}" == "VERBOSE" ] ; then
-    echo ""
-  else
-    log_msg "${TASK_NAME} - START ---------------------------------------------------------"
-  fi
- 
-  for DOMAINS_NAMES_RECORDS in "${DOMAINS_NAMES_LIST[@]}"
-  do
+  case "${TASK_NAME}" in
+    STATUS | VERBOSE)
+      echo ''
+      ;;
+    HELP)
+      cat <<EOF
+Usage: acmecrt.sh command
+Command (one at a time):
+  --create  - Create non-existent certificate (according to ${DB_FILE} database)
+  --renew   - Renew certificates (from a month before they expire)
+  --update  - Update certificates (create and delete according to ${DB_FILE} database)
+  --delete  - Delete certificates (according to ${DB_FILE} database)
+  --copy    - Distribute certificates on hosts (dedicated or virtuals)
+  --status  - Status of certificates (with validy dates)
+  --verbose - Status of certificates (with last operation dates and validity dates)
+  --help    - Command line help
+Return codes:
+  0 - No fatal error, read ${LOG_MANAGER_FILE} for process related errors
+  1 - Command error
+  2 - Domains names database ${DB_FILE} not found.
+  3 - File ${ETC_DIR}/ACCOUNT_NAME/myaccount.conf not found.
+  4 - File ${ETC_DIR}/HOST_NAME.certops not found.
+  5 - File ${ETC_DIR}/HOST_NAME.reload not found.
+EOF
+      return
+      ;;
+    *)
+      log_msg "${TASK_NAME} - START ---------------------------------------------------------"
+      ;;
+  esac
+
+  local IFS=';'
+  for DOMAINS_NAMES_RECORDS in "${DOMAINS_NAMES_LIST[@]}"; do
 
     # Read a record from acmemgr.db
-    IFS=";" read -ra CURRENT_RECORD <<< ${DOMAINS_NAMES_RECORDS}
-    unset IFS
+    read -ra CURRENT_RECORD <<<"${DOMAINS_NAMES_RECORDS}"
 
     # Initial reading of HOST_NAME
-    HOST_NAME_TMP=${CURRENT_RECORD[0]}
+    HOST_NAME_TMP="${CURRENT_RECORD[0]}"
 
     #--------------------------:
     log_dbg "HOST_NAME_MEM     : ${HOST_NAME_MEM}"
     log_dbg "HOST_NAME_TMP     : ${HOST_NAME_TMP}"
 
-    # If first loop iteration
-    if [ "${HOST_NAME_MEM}" == "${NULL_VALUE}" ]; then
+    # If first loop iteration
+    if [[ ${HOST_NAME_MEM} == "${NULL_VALUE}" ]]; then
 
-      log_dbg "Initialize HOST_NAME_MEM"
-      HOST_NAME_MEM=${HOST_NAME_TMP}
+      log_dbg 'Initialize HOST_NAME_MEM'
+      HOST_NAME_MEM="${HOST_NAME_TMP}"
 
-    # If new host in list (<host_name> break)
-    elif [ ${HOST_NAME_MEM} != ${HOST_NAME_TMP} ]; then
+      # If new host in list (<host_name> break)
+    elif [[ ${HOST_NAME_MEM} != "${HOST_NAME_TMP}" ]]; then
 
-      log_dbg "Host name break"
+      log_dbg 'Host name break'
       #--------------------------:
       log_dbg "SERVICE_RESTART   : ${SERVICE_RESTART}"
 
       # See if previous host needed to be restarted
-      if [ "${SERVICE_RESTART}" == "true" ]; then
+      if [[ ${SERVICE_RESTART} == 'true' ]]; then
 
-        SERVICE_RESTART="false"
+        SERVICE_RESTART='false'
 
-        log_dbg "Service restart"
+        log_dbg 'Service restart'
 
-        # At this point all vars for previous domain are still available, so the host to reload
+        # At this point all vars for previous domain are still available, so the host to reload
 
         # Reload service - Execution of /etc/acme/<host>.reload content
         RELOAD_FILE="${ETC_DIR}/${HOST_NAME}.reload"
@@ -678,43 +723,49 @@ function main_process()
         log_dbg "RELOAD_COMMAND    : ${RELOAD_COMMAND}"
 
         # ssh -p <host_port> <host_login>@<host_fqdn> bash < /etc/acme/<host>.reload content
-        ssh -p ${HOST_PORT} ${HOST_LOGIN}@${HOST_FQDN} bash < ${RELOAD_FILE}
-        RELOAD_RETURN_CODE="${?}"
-
-        if [ ${RELOAD_RETURN_CODE} -eq 0 ]; then
-          mail_msg ${HOST_NAME} "Service has been reloaded." "Success"
+        if ssh \
+          -p "${HOST_PORT}" \
+          "${HOST_LOGIN}@${HOST_FQDN}" \
+          bash <"${RELOAD_FILE}"; then
+          mail_msg \
+            "${HOST_NAME}" \
+            "Service has been reloaded." \
+            'Success'
         else
-          mail_err ${HOST_NAME} "Service has not been reloaded." "Error code : ${RELOAD_RETURN_CODE}."
+          mail_err \
+            "${HOST_NAME}" \
+            "Service has not been reloaded." \
+            "Error code : ${?}."
         fi
       fi
     fi
 
-    # Update vars for current host
-    HOST_NAME_MEM=${HOST_NAME_TMP}
+    # Update vars for current host
+    HOST_NAME_MEM="${HOST_NAME_TMP}"
 
     #--------------------------:
     log_dbg "HOST_NAME_MEM     : ${HOST_NAME_MEM}"
 
-    if [ ${HOST_NAME_MEM} != "${NULL_VALUE}" ]; then
+    if [[ ${HOST_NAME_MEM} != "${NULL_VALUE}" ]]; then
 
       # Record : "DOM_UNAME;HOST_LOGIN;HOST_FQDN,HOST_PORT;ACCOUNT_NAME;SERVICE_NAME;DOMAIN_NAME;[DOMAIN_STATUS]"
 
-      HOST_NAME=${CURRENT_RECORD[0]}                # HOST_NAME       : Host name for scripting, mailing and filtering purposes (only a-z,0-9,'-','_')
-      HOST_LOGIN=${CURRENT_RECORD[1]}               # HOST_LOGIN      : Host login
-      HOST_FQDN=${CURRENT_RECORD[2]}                # HOST_FQDN       : Host url (qualified form or "domuNNNv1" for local HOST)
-      HOST_PORT=${CURRENT_RECORD[3]}                # HOST_PORT       : Host port
-      ACCOUNT_NAME=${CURRENT_RECORD[4]}             # ACCOUNT_NAME    : Registrar DNS-01 API account to which the domain name belongs
-      DOMAIN_NAME=${CURRENT_RECORD[5]}              # DOMAIN_NAME     : Domain name hosted
+      HOST_NAME=${CURRENT_RECORD[0]}    # HOST_NAME       : Host name for scripting, mailing and filtering purposes (only a-z,0-9,'-','_')
+      HOST_LOGIN=${CURRENT_RECORD[1]}   # HOST_LOGIN      : Host login
+      HOST_FQDN=${CURRENT_RECORD[2]}    # HOST_FQDN       : Host url (qualified form or "domuNNNv1" for local HOST)
+      HOST_PORT=${CURRENT_RECORD[3]}    # HOST_PORT       : Host port
+      ACCOUNT_NAME=${CURRENT_RECORD[4]} # ACCOUNT_NAME    : Registrar DNS-01 API account to which the domain name belongs
+      DOMAIN_NAME=${CURRENT_RECORD[5]}  # DOMAIN_NAME     : Domain name hosted
 
-      # Check if CURRENT_RECORD[6] is defined
+      # Check if CURRENT_RECORD[6] is defined
 
-      if [ -n "${CURRENT_RECORD[6]+set}" ]; then
-        log_dbg "CURRENT-RECORD-6 was SET"
-        DOMAIN_STATUS=${CURRENT_RECORD[6]}          # CURRENT_RECORD[6] is defined
+      if [[ -n ${CURRENT_RECORD[6]+set} ]]; then
+        log_dbg 'CURRENT-RECORD-6 was SET'
+        DOMAIN_STATUS="${CURRENT_RECORD[6]}" # CURRENT_RECORD[6] is defined
       else
-        log_dbg "CURRENT-RECORD-6 was UNSET"
-        DOMAIN_STATUS="${NULL_VALUE}"               # CURRENT_RECORD[6] is not defined
-      fi 
+        log_dbg 'CURRENT-RECORD-6 was UNSET'
+        DOMAIN_STATUS="${NULL_VALUE}" # CURRENT_RECORD[6] is not defined
+      fi
 
       HOME_DIR="${ETC_DIR}/${ACCOUNT_NAME}"
 
@@ -722,30 +773,39 @@ function main_process()
       CERTOPS_FILE="${ETC_DIR}/${HOST_NAME}.certops"
       RELOAD_FILE="${ETC_DIR}/${HOST_NAME}.reload"
 
-      # Check files
+      # Check files
 
-      if [ -f "${ACCOUNT_FILE}" ]; then
-        source "${ACCOUNT_FILE}"  # Loading ACCOUNT_FILE then read ACCOUNT_DNS01, CERT_HOME & ACCOUNT_EMAIL values
-      else
-        mail_err ${HOST_NAME} "File ${ACCOUNT_FILE} not found." "Error"
+      # Loading ACCOUNT_FILE then read ACCOUNT_DNS01, CERT_HOME & ACCOUNT_EMAIL values
+      # shellcheck source=/dev/null
+      if ! source "${ACCOUNT_FILE}"; then
+        mail_err \
+          "${HOST_NAME}" \
+          "File ${ACCOUNT_FILE} not found." \
+          'Error'
         exit 3
       fi
 
-      if [ ! -f "${CERTOPS_FILE}" ]; then
-        mail_err ${HOST_NAME} "File : ${CERTOPS_FILE} not found." "Error"
+      if [[ ! -e ${CERTOPS_FILE} ]]; then
+        mail_err \
+          "${HOST_NAME}" \
+          "File : ${CERTOPS_FILE} not found." \
+          'Error'
         exit 4
       fi
 
-      if [ ! -f "${RELOAD_FILE}" ]; then
-        mail_err ${HOST_NAME} "File : ${RELOAD_FILE} not found." "Error"
+      if [[ ! -e ${RELOAD_FILE} ]]; then
+        mail_err \
+          "${HOST_NAME}" \
+          "File : ${RELOAD_FILE} not found." \
+          'Error'
         exit 5
       fi
 
-      CERT_DIR="${CERT_HOME}/${DOMAIN_NAME}"        # /etc/acme/certs/<domain_name>
-      DOMAIN_KEY="${CERT_DIR}/${DOMAIN_NAME}.key"   # /etc/acme/certs/<domain_name>/www.domain.tld.key
-      DOMAIN_CERT="${CERT_DIR}/${CERT_FULLCHAIN}"   # /etc/acme/certs/<domain_name>/fullchain.cer
+      CERT_DIR="${CERT_HOME}/${DOMAIN_NAME}"      # /etc/acme/certs/<domain_name>
+      DOMAIN_KEY="${CERT_DIR}/${DOMAIN_NAME}.key" # /etc/acme/certs/<domain_name>/www.domain.tld.key
+      DOMAIN_CERT="${CERT_DIR}/${CERT_FULLCHAIN}" # /etc/acme/certs/<domain_name>/fullchain.cer
 
-      # Debug display
+      # Debug display
       #--------------------------:
       log_dbg "HOST_NAME         : ${HOST_NAME}"
       log_dbg "HOST_LOGIN        : ${HOST_LOGIN}"
@@ -771,27 +831,23 @@ function main_process()
           renew_process
           ;;
         UPDATE)
-          create_process
           delete_process
+          create_process
           ;;
         DELETE)
           delete_process
           ;;
         COPY)
           copy_process
-         ;;
-        STATUS)
+          ;;
+        STATUS | VERBOSE)
           status_process
-         ;;
-        VERBOSE)
-          status_process
-         ;; 
+          ;;
       esac
 
     else
-      if [ "${TASK_NAME}" == "STATUS" ] ||
-         [ "${TASK_NAME}" == "VERBOSE" ] ; then
-        echo ""
+      if [[ ${TASK_NAME} =~ STATUS|VERBOSE ]]; then
+        echo ''
       else
         log_msg "${TASK_NAME} - END -----------------------------------------------------------"
       fi
@@ -803,101 +859,82 @@ function main_process()
 # main_program
 #-------------------------------------------------------------------------------
 
-COMMAND_NAME=$1
+NULL_VALUE='null'
+SERVICE_RESTART='false'
+TASK_NAME='INIT  '
 
-NULL_VALUE="null"
-SERVICE_RESTART="false"
-TASK_NAME="INIT  "
+DOMAIN_STATUS_DELETING='DELETING'
+DOMAIN_STATUS_DELETED='DELETED'
+DOMAIN_STATUS_CREATED='CREATED'
+DOMAIN_STATUS_RENEWED='RENEWED'
 
-DOMAIN_STATUS_DELETING="DELETING"
-DOMAIN_STATUS_DELETED="DELETED"
-DOMAIN_STATUS_CREATED="CREATED"
-DOMAIN_STATUS_RENEWED="RENEWED"
+CERT_FULLCHAIN='fullchain.cer'
+CERT_CA='ca.cer'
 
-CERT_FULLCHAIN="fullchain.cer"
-CERT_CA="ca.cer"
+LOG_TIMESTAMP=() # To be acme.sh log compliant (same format). Replace LOG_TIMESTAMP=("+%Y%m%d - %H%M%S")
 
-LOG_TIMESTAMP="" # To be acme.sh log compliant (same format). Replace LOG_TIMESTAMP="+%Y%m%d - %H%M%S" 
-
-LOCAL_HOST=$(hostname -s)
+LOCAL_HOST="$(hostname --short)"
 
 # Create log file if nonexistent
-if [ ! -f "${LOG_MANAGER_FILE}" ]; then
-   echo "" > "${LOG_MANAGER_FILE}"
-fi  
+if [[ ! -f ${LOG_MANAGER_FILE} ]]; then
+  install -D /dev/null "${LOG_MANAGER_FILE}"
+fi
 
-echo ""
-echo "Sowebio SARL (R) An acme.sh manager using DNS-01 protocol. Version ${MANAGER_VERSION}."
-echo "Copyright    (C) Stephane Riviere 2017-2018, according to GPLv3 or greater."
+cat <<EOF
+
+Sowebio SARL (R) An acme.sh manager using DNS-01 protocol. Version ${MANAGER_VERSION}.
+Copyright    (C) Sowebio SARL & all listed authors 2017-2019, according to GPLv3 or greater.
+
+EOF
 
 #--------------------------:
 log_dbg "DB_FILE           : ${DB_FILE}"
 
-if [ -f "${DB_FILE}" ]; then
+if [[ ! -f ${DB_FILE} ]]; then
+  mail_err 'INIT' "File ${DB_FILE} not found." 'Error'
+  exit 2
+fi
 
-  source "${DB_FILE}"
+# shellcheck source=/dev/null
+source "${DB_FILE}"
 
-  # acmemgr.sh renamed acmemgr.create is eq to acmemgr.sh --create (useful for /etc/cron.hourly jobs)
-  if [[ $0 = *".update"* ]]; then
-    COMMAND_NAME="--update"
-  fi
+# script name as command helper for /etc/cron.hourly jobs
+# acmemgr.sh renamed acmemgr.create is eq to acmemgr.sh --create
+# acmemgr.sh renamed acmemgr.renew is eq to acmemgr.sh --renew
 
-  # acmemgr.sh renamed acmemgr.renew is eq to acmemgr.sh --renew (useful for /etc/cron.weekly jobs)
-  if [[ $0 = *".renew"* ]]; then
-    COMMAND_NAME="--renew"
-  fi
-
-  case "${COMMAND_NAME}" in
-    --create)
-      main_process "CREATE"
-      ;;
-    --renew)
-      main_process "RENEW"
-      ;;
-    --update)
-      main_process "UPDATE"
-      ;;
-    --copy)
-      main_process "COPY"
-      ;;
-    --delete)
-      main_process "DELETE"
-      ;;
-    --status)
-      main_process "STATUS"
-      ;;
-    --verbose)
-      main_process "VERBOSE"
-      ;;
-    *)
-    echo "Usage: acmecrt.sh command"
-    echo "Command (one at a time):"
-    echo "  --create  - Create non-existent certificate (according to ${DB_FILE} database)"
-    echo "  --renew   - Renew certificates (from a month before they expire)"
-    echo "  --update  - Update certificates (create and delete according to ${DB_FILE} database)"
-    echo "  --delete  - Delete certificates (according to ${DB_FILE} database)"
-    echo "  --copy    - Distribute certificates on hosts (dedicated or virtuals)"
-    echo "  --status  - Status of certificates (with validy dates)"
-    echo "  --verbose - Status of certificates (with last operation dates and validity dates)"
-    echo "  --help    - Command line help"
-    echo "Return codes:"
-    echo "  0 - No fatal error, read ${LOG_MANAGER_FILE} for process related errors"
-    echo "  1 - Command error"
-    echo "  2 - Domains names datase ${DB_FILE} not found."
-    echo "  3 - File ${ETC_DIR}/ACCOUNT_NAME/myaccount.conf not found."
-    echo "  4 - File ${ETC_DIR}/HOST_NAME.certops not found."
-    echo "  5 - File ${ETC_DIR}/HOST_NAME.reload not found."
-    echo ""
+[[ "${0}" =~ .*(update|renew) ]]
+case "${1:---${BASH_REMATCH[1]:-help}}" in
+  --create)
+    main_process 'CREATE'
+    ;;
+  --renew)
+    main_process 'RENEW'
+    ;;
+  --update)
+    main_process 'UPDATE'
+    ;;
+  --copy)
+    main_process 'COPY'
+    ;;
+  --delete)
+    main_process 'DELETE'
+    ;;
+  --status)
+    main_process 'STATUS'
+    ;;
+  --verbose)
+    main_process 'VERBOSE'
+    ;;
+  --help)
+    main_process 'HELP'
+    ;;
+  *)
+    main_process 'HELP'
     exit 1
-
     ;;
   esac
   exit 0
 
-else
-  mail_err "INIT" "File ${DB_FILE} not found." "Error"
-  exit 2
-fi
 
 #----------------------------------------------------------------------------
 # EOF
