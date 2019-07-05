@@ -182,7 +182,30 @@ For a more detailed view at the file level, see below the "Multi-accounts tree e
 
 ### Base install, for one or many DNS-01 accounts.
 
-Download acme.sh, acmemgr.sh, create some directories and copy some files : 
+To ease the beginning of the setup, you may use a pre-install script...
+
+```
+root@system: cd /root
+root@system: git clone https://github.com/Sowebio/acmemgr.sh.git
+root@system: cd ./acmemgr.sh
+root@system: ./install.sh
+
+Clonage dans 'acme.sh'...
+remote: Enumerating objects: 23, done.
+remote: Counting objects: 100% (23/23), done.
+remote: Compressing objects: 100% (16/16), done.
+remote: Total 8926 (delta 7), reused 16 (delta 7), pack-reused 8903
+Réception d'objets: 100% (8926/8926), 3.50 MiB | 3.41 MiB/s, fait.
+Résolution des deltas: 100% (5188/5188), fait.
+Vérification de la connectivité... fait.
+Create directories...
+Copy files...
+Populate files...
+```
+
+...or manually following the instructions below. 
+
+Download acme.sh, acmemgr.sh, create some directories and create and copy some files : 
 
 ```
 root@system: cd /root
@@ -195,11 +218,14 @@ root@system: mkdir /var/log/acme
 root@system: cp /root/acme.sh/acme.sh /usr/local/bin
 root@system: cp /root/acmemgr.sh/acmemgr.sh /usr/local/bin
 root@system: cp /root/acmemgr.sh/acmemgr.db /etc/acme
-root@system: cp /root/acmemgr.sh/*.certops /etc/acme
-root@system: cp /root/acmemgr.sh/*.reload /etc/acme
+root@system: cp /root/acmemgr.sh/examples/*.certops /etc/acme
+root@system: cp /root/acmemgr.sh/examples/*.reload /etc/acme
+
+root@system: touch /etc/logrotate.d/acme
+
 ```
 
-Create /etc.logrotate.d/acme :
+Fill /etc/logrotate.d/acme :
 
 ```
 /var/log/acme/acmemgr.log {
@@ -306,6 +332,8 @@ LOG_LEVEL=1
 #AUTO_UPGRADE="1"
 #NO_TIMESTAMP=1
 
+EMAIL_EVEN_NOT_RENEWED=1
+
 ACCOUNT_DNS01="dns_ovh"
     
 CERT_HOME='/etc/acme/certs'
@@ -314,11 +342,16 @@ USER_AGENT='acme client'
 ACCOUNT_EMAIL='your@email.adress'
 ```
 
-All variables are only used by acme.sh, except for three :
+Most parameters are only used by acme.sh, except for three :
 
 - ACCOUNT_DNS01 will be used consistently by **acmemgr.sh** and acme.sh.
 - CERT_HOME will be used consistently by **acmemgr.sh** and acme.sh.
 - ACCOUNT_EMAIL will be used for two purposes: through acme.sh, Let's Encrypt will be able to sent you messages (about the near expiring certificates, for example) and **acmemgr.sh** will be able to sent you all events about yours certificates management.
+
+A parameter is only used by acmemgr.sh :
+
+- EMAIL_EVEN_NOT_RENEWED set to 1 send an email to confirm that renewing has been tested but not mandatory yet.
+
 
 ### Filling the account keys and secret
 
@@ -345,6 +378,14 @@ Update /etc.logrotate.d/acme :
 
 ```
 /var/log/acme/ACCOUNT_NAME_ONE.log {
+  rotate 12
+  monthly
+  compress
+  missingok
+  notifempty
+}
+
+/var/log/acme/acmemgr.log {
   rotate 12
   monthly
   compress
@@ -406,11 +447,11 @@ fi
 ### HOST_NAME.reload
 
 ```
-#!/bin/bash
+#!/usr/bin/env bash
 #----------------------------------------------------------------------------
 # ACMEMGR.SH : an ACME.SH manager using DNS-01 issued LETSENCRYPT certificates
 #
-# nginx.reload -  Nginx smart reload (see documentation)
+# nginx.reload - Nginx smart reload (see documentation)
 #----------------------------------------------------------------------------
 
 systemctl reload nginx
@@ -729,7 +770,8 @@ root@system:source-highlight --line-number --src-lang bash --out-format odf --do
 - 20180315 : **0.8** - sr - When creating certificate which starts with "www." (like "www.domain.tld"), acmemgr.sh automatically adds the domain name "domain.tld" in certificate. Email messages improvements: The subject of the message is more explicit and there is no need, in most cases, to open the message to read it in full. Email messages bug : a success message in renewing was tagged as an error. File example bug : in mailcow_example.certops, the destination certificates files were reversed. Documentation improvements and typos correction. Css style for html rendering has been improved.
 - 20180329 : **0.9** - sr ss - acmemgr.sh and acme.sh now share the same path to certificates. Deleting CERT_ROOT variable, which was statically defined to /etc/acme/certs in acmemgr.sh. acemmgr.sh now uses CERT_HOME, which is defined in each configuration file myaccount.conf of every DNS account. CERT_HOME is used in all acme.sh certificates operation through the --cert-home parameter. Validate wild certificates creation (which was not tested or supported): while the creation itself was successful, the update of acme mgr.db was wrong, because of the special character status of the * (star) character. Check create, renew and revoke cycle with a test wild certificate. Documentation improvements and typos correction. 
 - 20180430 : **1.0** - sr - Documentation improvements and typos correction. Add quick link table. Move to Sowebio Github account.
-- 20190701 : **1.1** - lg sr - <COMING SOON> Lots of fixes and refactors in code with ShellCheck compliance. Change shebang in acmemgr.sh, ./examples/mailcow_reload and ./examples/nginx_example.reload from #!/bin/bash to #!/usr/bin/env bash. Many documentation improvements and typos corrections.
+- 20190701 : **1.1** - lg sr - Lots of fixes and refactors in code with ShellCheck compliance. Change shebang in acmemgr.sh, ./examples/mailcow_reload and ./examples/nginx_example.reload from #!/bin/bash to #!/usr/bin/env bash. Many documentation improvements and typos corrections.
+- 20190705 : **1.2** - lg sr - Clean source. Better delete routine for local and remote certificates. Add a pre-install script utility and cron files examples. By user request, add a parameter to limit emails sending when the renewed date is compute. acmemgr.sh v1.2 has been qualified with acme.sh v2.8.2.
 
 ### Authors & Contributors
 
@@ -737,7 +779,7 @@ sr : Stéphane Rivière - see below **Contact**
 
 ss : Somanos Sar - somanos(at)drumee.net : Has pointed out the inconsistencies in defining the certificates directory between amcemgr.sh and acme.sh.
 
-lg : Léa Gris - lea(at)noireaude.net : Lots of fixes and refactors in code with ShellCheck compliance
+lg : Léa Gris - lea(at)noireaude.net : Lots of fixes and refactors in code with ShellCheck compliance. New delete routines.
 
 ## Miscellaneous
 

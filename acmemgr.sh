@@ -29,7 +29,7 @@
 #-------------------------------------------------------------------------------
 
 MANAGER_DEBUG='false'
-MANAGER_VERSION='1.1'
+MANAGER_VERSION='1.2'
 MANAGER_NAME='acmemgr'
 ACME_NAME='acme'
 ACME_COMMAND="${ACME_NAME}.sh"
