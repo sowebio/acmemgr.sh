@@ -1,0 +1,202 @@
+
+
+LOG CREATION WITH DEBUG
+-----------------------
+
+14:00-root@domu240:/etc/acme>acmemgr.sh --update
+
+Sowebio SARL (R) An acme.sh manager using DNS-01 protocol. Version 1.1.
+Copyright    (C) Sowebio SARL & all listed authors 2017-2019, according to GPLv3 or greater.
+
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - INIT   - DEBUG - DB_FILE           : /etc/acme/acmemgr.db
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - MESSAGE - UPDATE - START ---------------------------------------------------------
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_NAME_MEM     : null
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_NAME_TMP     : rs11domu010
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - Initialize HOST_NAME_MEM
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_NAME_MEM     : rs11domu010
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - CURRENT-RECORD-6 was SET
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_NAME         : rs11domu010
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_LOGIN        : sr
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_FQDN         : 192.168.1.10
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_PORT         : 60174
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - ACCOUNT_NAME      : genesix
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - DOMAIN_NAME       : test0.netbio.fr
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - DOMAIN_STATUS     : CREATED - jeudi 27 juin 2019, 15:08:07 (UTC+0200)
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - CERT_DIR          : /etc/acme/certs/test0.netbio.fr
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - DOMAIN_KEY        : /etc/acme/certs/test0.netbio.fr/test0.netbio.fr.key
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - DOMAIN_CERT       : /etc/acme/certs/test0.netbio.fr/fullchain.cer
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOME_DIR          : /etc/acme/genesix
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - ACCOUNT_FILE      : /etc/acme/genesix/myaccount.conf
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - CERTOPS_FILE      : /etc/acme/rs11domu010.certops
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - RELOAD_FILE       : /etc/acme/rs11domu010.reload
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - ACCOUNT_DNS01     : dns_ovh
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_NAME_MEM     : rs11domu010
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_NAME_TMP     : rs11domu010
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_NAME_MEM     : rs11domu010
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - CURRENT-RECORD-6 was SET
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_NAME         : rs11domu010
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_LOGIN        : sr
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_FQDN         : 192.168.1.10
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_PORT         : 60174
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - ACCOUNT_NAME      : genesix
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - DOMAIN_NAME       : test3.netbio.fr
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - DOMAIN_STATUS     : CREATED - jeudi 27 juin 2019, 15:59:16 (UTC+0200)
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - CERT_DIR          : /etc/acme/certs/test3.netbio.fr
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - DOMAIN_KEY        : /etc/acme/certs/test3.netbio.fr/test3.netbio.fr.key
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - DOMAIN_CERT       : /etc/acme/certs/test3.netbio.fr/fullchain.cer
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOME_DIR          : /etc/acme/genesix
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - ACCOUNT_FILE      : /etc/acme/genesix/myaccount.conf
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - CERTOPS_FILE      : /etc/acme/rs11domu010.certops
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - RELOAD_FILE       : /etc/acme/rs11domu010.reload
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - ACCOUNT_DNS01     : dns_ovh
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_NAME_MEM     : rs11domu010
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_NAME_TMP     : rs11domu010
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_NAME_MEM     : rs11domu010
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - CURRENT-RECORD-6 was UNSET
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_NAME         : rs11domu010
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_LOGIN        : sr
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_FQDN         : 192.168.1.10
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOST_PORT         : 60174
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - ACCOUNT_NAME      : genesix
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - DOMAIN_NAME       : test4.netbio.fr
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - DOMAIN_STATUS     : null
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - CERT_DIR          : /etc/acme/certs/test4.netbio.fr
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - DOMAIN_KEY        : /etc/acme/certs/test4.netbio.fr/test4.netbio.fr.key
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - DOMAIN_CERT       : /etc/acme/certs/test4.netbio.fr/fullchain.cer
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - HOME_DIR          : /etc/acme/genesix
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - ACCOUNT_FILE      : /etc/acme/genesix/myaccount.conf
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - CERTOPS_FILE      : /etc/acme/rs11domu010.certops
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - RELOAD_FILE       : /etc/acme/rs11domu010.reload
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - ACCOUNT_DNS01     : dns_ovh
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] - UPDATE - DEBUG - ACME_COMMAND      : acme.sh                     --home /etc/acme/genesix                     --config-home /etc/acme/genesix                     --cert-home /etc/acme/certs                     --log /var/log/acme/genesix.log                     --dns dns_ovh                     --issue                     --domain test4.netbio.fr
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] Creating domain key
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] The domain key is here: /etc/acme/certs/test4.netbio.fr/test4.netbio.fr.key
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] Single domain='test4.netbio.fr'
+[jeudi 27 juin 2019, 16:24:13 (UTC+0200)] Getting domain auth token for each domain
+[jeudi 27 juin 2019, 16:24:15 (UTC+0200)] Getting webroot for domain='test4.netbio.fr'
+[jeudi 27 juin 2019, 16:24:15 (UTC+0200)] Adding txt value: VVu6KaaN-QPL96Y-oZPeXsW3xyQhJYAJKrkSc_gMzqc for domain:  _acme-challenge.test4.netbio.fr
+[jeudi 27 juin 2019, 16:24:15 (UTC+0200)] Using OVH endpoint: ovh-eu
+[jeudi 27 juin 2019, 16:24:15 (UTC+0200)] Checking authentication
+[jeudi 27 juin 2019, 16:24:15 (UTC+0200)] Consumer key is ok.
+[jeudi 27 juin 2019, 16:24:16 (UTC+0200)] Adding record
+[jeudi 27 juin 2019, 16:24:16 (UTC+0200)] Added, sleep 10 seconds.
+[jeudi 27 juin 2019, 16:24:27 (UTC+0200)] The txt record is added: Success.
+[jeudi 27 juin 2019, 16:24:27 (UTC+0200)] Let's check each dns records now. Sleep 20 seconds first.
+[jeudi 27 juin 2019, 16:24:48 (UTC+0200)] Checking test4.netbio.fr for _acme-challenge.test4.netbio.fr
+[jeudi 27 juin 2019, 16:24:48 (UTC+0200)] Domain test4.netbio.fr '_acme-challenge.test4.netbio.fr' success.
+[jeudi 27 juin 2019, 16:24:48 (UTC+0200)] All success, let's return
+[jeudi 27 juin 2019, 16:24:48 (UTC+0200)] Verifying: test4.netbio.fr
+[jeudi 27 juin 2019, 16:24:51 (UTC+0200)] Success
+[jeudi 27 juin 2019, 16:24:51 (UTC+0200)] Removing DNS records.
+[jeudi 27 juin 2019, 16:24:51 (UTC+0200)] Removing txt: VVu6KaaN-QPL96Y-oZPeXsW3xyQhJYAJKrkSc_gMzqc for domain: _acme-challenge.test4.netbio.fr
+[jeudi 27 juin 2019, 16:24:51 (UTC+0200)] Using OVH endpoint: ovh-eu
+[jeudi 27 juin 2019, 16:24:51 (UTC+0200)] Checking authentication
+[jeudi 27 juin 2019, 16:24:51 (UTC+0200)] Consumer key is ok.
+[jeudi 27 juin 2019, 16:24:53 (UTC+0200)] Removed: Success
+[jeudi 27 juin 2019, 16:24:53 (UTC+0200)] Verify finished, start to sign.
+[jeudi 27 juin 2019, 16:24:53 (UTC+0200)] Lets finalize the order, Le_OrderFinalize: https://acme-v02.api.letsencrypt.org/acme/finalize/60110928/627330866
+[jeudi 27 juin 2019, 16:24:55 (UTC+0200)] Download cert, Le_LinkCert: https://acme-v02.api.letsencrypt.org/acme/cert/033191c2666f9b0cd3c3e144bebbb74b6262
+[jeudi 27 juin 2019, 16:24:55 (UTC+0200)] Cert success.
+-----BEGIN CERTIFICATE-----
+MIIFVDCCBDygAwIBAgISAzGRwmZvmwzTw+FEvru3S2JiMA0GCSqGSIb3DQEBCwUA
+MEoxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MSMwIQYDVQQD
+ExpMZXQncyBFbmNyeXB0IEF1dGhvcml0eSBYMzAeFw0xOTA2MjcxMzI0MzVaFw0x
+OTA5MjUxMzI0MzVaMBoxGDAWBgNVBAMTD3Rlc3Q0Lm5ldGJpby5mcjCCASIwDQYJ
+KoZIhvcNAQEBBQADggEPADCCAQoCggEBAM+Sf0x3ypjhb1d3hStG0xKMaR2rwpHJ
+zS1YUFE2jCljWmzQEFkfgj12mOERQpCC5D4zGqN2OZ94nhhMnoSE+4zC+LVfuJ5t
+1Njf0SdvTVwWy1Cup7PyhEjLhKftzEZi/AdJY41vUyKhtuUlsbKufAogj5cUEaKr
+tCb1cFyPJQcg+74kpnUz3QKbzxUJNyJZy/sX/MRyA2G5L2lv6RZ263w5E3nki4du
+PV9pdmxEVJPeIJ9GtMxAmKyjloAw49IetDNpe5KVsxQA/ZmeJayNEKOyN8ztBsg1
+dgBLzZde86kcNYPfVdmdotFHFe154jpM6U37Bts0jpxXYT8AY5OUHg0CAwEAAaOC
+AmIwggJeMA4GA1UdDwEB/wQEAwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYB
+BQUHAwIwDAYDVR0TAQH/BAIwADAdBgNVHQ4EFgQUe13VNFJ+weER6vxBYzRAjlX4
+UnswHwYDVR0jBBgwFoAUqEpqYwR93brm0Tm3pkVl7/Oo7KEwbwYIKwYBBQUHAQEE
+YzBhMC4GCCsGAQUFBzABhiJodHRwOi8vb2NzcC5pbnQteDMubGV0c2VuY3J5cHQu
+b3JnMC8GCCsGAQUFBzAChiNodHRwOi8vY2VydC5pbnQteDMubGV0c2VuY3J5cHQu
+b3JnLzAaBgNVHREEEzARgg90ZXN0NC5uZXRiaW8uZnIwTAYDVR0gBEUwQzAIBgZn
+gQwBAgEwNwYLKwYBBAGC3xMBAQEwKDAmBggrBgEFBQcCARYaaHR0cDovL2Nwcy5s
+ZXRzZW5jcnlwdC5vcmcwggECBgorBgEEAdZ5AgQCBIHzBIHwAO4AdQB0ftqDMa0z
+EJEhnM4lT0Jwwr/9XkIgCMY3NXnmEHvMVgAAAWuZUuUfAAAEAwBGMEQCIFrWTNhw
+o65CvUGj8Njo6yzVvFeyAcJWYYal1WiscRFAAiBsDk2chGdydllrpBO9HLBQFef/
+KlZ6GoBDzfU4voYxMQB1AGPy283oO8wszwtyhCdXazOkjWF3j711pjixx2hUS9iN
+AAABa5lS5Q8AAAQDAEYwRAIgIA1zhbNsSJKdQnDjwv6sZZjSq7SkKDlgeDgSF3B7
+sLQCIE3ZbZrORELmKbDCo3YbvApMEHnHvNyWjB26kv3mW+7XMA0GCSqGSIb3DQEB
+CwUAA4IBAQA6oacNiYMufYYH/B6yRoD9pgfP+b8nvIWmQAs2wnhuvZmA/wgSANSX
+57ZmtJC3Xb0FvbvM5ILGSfGxAdcQVsM+Zbvu7BGifBllj6h6BQs99FWwkV06kN1+
+Uhg+oe/3z13o8lMOAfRku+fc2yjk+6FWZTwbClgfe0mj/VfTf9NY+puUP4R3yXJj
+ttwFb0jTHYeQqZ9imIKAAg/7oLI6nSy54nR8eILDymDVgwEiFKiqroHNG2kj8/J3
+mggx/0h+GoDgTRjNXANTV+lX8IXT8M6KK1ueENj1RpuquVClpBt46mQzrzq+ldf6
+ycA+Fn+Jips0Vxp8Xs06PrJ412uT48Ik
+-----END CERTIFICATE-----
+[jeudi 27 juin 2019, 16:24:55 (UTC+0200)] Your cert is in  /etc/acme/certs/test4.netbio.fr/test4.netbio.fr.cer 
+[jeudi 27 juin 2019, 16:24:55 (UTC+0200)] Your cert key is in  /etc/acme/certs/test4.netbio.fr/test4.netbio.fr.key 
+[jeudi 27 juin 2019, 16:24:55 (UTC+0200)] The intermediate CA cert is in  /etc/acme/certs/test4.netbio.fr/ca.cer 
+[jeudi 27 juin 2019, 16:24:55 (UTC+0200)] And the full chain certs is there:  /etc/acme/certs/test4.netbio.fr/fullchain.cer 
+[jeudi 27 juin 2019, 16:24:55 (UTC+0200)] - UPDATE - MESSAGE - rs11domu010 - Certificate test4.netbio.fr has been created. \nValidity period:\nnotBefore=Jun 27 13:24:35 2019 GMT notAfter=Sep 25 13:24:35 2019 GMT
+[jeudi 27 juin 2019, 16:24:55 (UTC+0200)] - UPDATE - MESSAGE - domu240 - Wait 2 s for mail sorting in MUA.
+
+#######################################################
+
+ #####  ####### #     # #######  #####    ###   #     #
+#     # #       ##    # #       #     #    #     #   #
+#       #       # #   # #       #          #      # #
+#  #### #####   #  #  # #####    #####     #       #
+#     # #       #   # # #             #    #      # #
+#     # #       #    ## #       #     #    #     #   #
+ #####  ####### #     # #######  #####    ###   #     #
+
+  SP-64-S Xeon E5 1620v2 4c/8t 3.9GHz 64Go ECC 2x2To
+ 
+             OVH RBX5 Genesix (v2) domu010
+
+#######################################################
+
+
+#######################################################
+
+ #####  ####### #     # #######  #####    ###   #     #
+#     # #       ##    # #       #     #    #     #   #
+#       #       # #   # #       #          #      # #
+#  #### #####   #  #  # #####    #####     #       #
+#     # #       #   # # #             #    #      # #
+#     # #       #    ## #       #     #    #     #   #
+ #####  ####### #     # #######  #####    ###   #     #
+
+  SP-64-S Xeon E5 1620v2 4c/8t 3.9GHz 64Go ECC 2x2To
+ 
+             OVH RBX5 Genesix (v2) domu010
+
+#######################################################
+
+[jeudi 27 juin 2019, 16:24:57 (UTC+0200)] - UPDATE - MESSAGE - rs11domu010 - Certificate test4.netbio.fr has been successfuly copied. Host is now tagged to service reload.
+[jeudi 27 juin 2019, 16:24:57 (UTC+0200)] - UPDATE - MESSAGE - domu240 - Wait 2 s for mail sorting in MUA.
+[jeudi 27 juin 2019, 16:24:59 (UTC+0200)] - UPDATE - DEBUG - DB_FILE_REP._CMD. : s/test4.netbio.fr/test4.netbio.fr;CREATED - jeudi 27 juin 2019, 16:24:59 (UTC+0200)/
+[jeudi 27 juin 2019, 16:24:59 (UTC+0200)] - UPDATE - MESSAGE - rs11domu010 - Domain test4.netbio.fr has been tagged CREATED. Success
+[jeudi 27 juin 2019, 16:24:59 (UTC+0200)] - UPDATE - MESSAGE - domu240 - Wait 2 s for mail sorting in MUA.
+[jeudi 27 juin 2019, 16:25:01 (UTC+0200)] - UPDATE - DEBUG - HOST_NAME_MEM     : rs11domu010
+[jeudi 27 juin 2019, 16:25:01 (UTC+0200)] - UPDATE - DEBUG - HOST_NAME_TMP     : null
+[jeudi 27 juin 2019, 16:25:01 (UTC+0200)] - UPDATE - DEBUG - Host name break
+[jeudi 27 juin 2019, 16:25:01 (UTC+0200)] - UPDATE - DEBUG - SERVICE_RESTART   : true
+[jeudi 27 juin 2019, 16:25:01 (UTC+0200)] - UPDATE - DEBUG - Service restart
+[jeudi 27 juin 2019, 16:25:01 (UTC+0200)] - UPDATE - DEBUG - RELOAD_COMMAND    : 
+
+#######################################################
+
+ #####  ####### #     # #######  #####    ###   #     #
+#     # #       ##    # #       #     #    #     #   #
+#       #       # #   # #       #          #      # #
+#  #### #####   #  #  # #####    #####     #       #
+#     # #       #   # # #             #    #      # #
+#     # #       #    ## #       #     #    #     #   #
+ #####  ####### #     # #######  #####    ###   #     #
+
+  SP-64-S Xeon E5 1620v2 4c/8t 3.9GHz 64Go ECC 2x2To
+ 
+             OVH RBX5 Genesix (v2) domu010
+
+#######################################################
+
+[jeudi 27 juin 2019, 16:25:02 (UTC+0200)] - UPDATE - MESSAGE - rs11domu010 - Service has been reloaded. Success
+[jeudi 27 juin 2019, 16:25:02 (UTC+0200)] - UPDATE - MESSAGE - domu240 - Wait 2 s for mail sorting in MUA.
+[jeudi 27 juin 2019, 16:25:04 (UTC+0200)] - UPDATE - DEBUG - HOST_NAME_MEM     : null
+[jeudi 27 juin 2019, 16:25:04 (UTC+0200)] - UPDATE - MESSAGE - UPDATE - END -----------------------------------------------------------

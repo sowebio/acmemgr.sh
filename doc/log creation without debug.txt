@@ -1,0 +1,136 @@
+
+LOG CREATION WITHOUT DEBUG
+--------------------------
+
+14:00-root@domu240:/etc/acme>acmemgr.sh --update
+
+Sowebio SARL (R) An acme.sh manager using DNS-01 protocol. Version 1.1.
+Copyright    (C) Sowebio SARL & all listed authors 2017-2019, according to GPLv3 or greater.
+
+[jeudi 27 juin 2019, 15:58:30 (UTC+0200)] - UPDATE - MESSAGE - UPDATE - START ---------------------------------------------------------
+[jeudi 27 juin 2019, 15:58:30 (UTC+0200)] Creating domain key
+[jeudi 27 juin 2019, 15:58:31 (UTC+0200)] The domain key is here: /etc/acme/certs/test3.netbio.fr/test3.netbio.fr.key
+[jeudi 27 juin 2019, 15:58:31 (UTC+0200)] Single domain='test3.netbio.fr'
+[jeudi 27 juin 2019, 15:58:31 (UTC+0200)] Getting domain auth token for each domain
+[jeudi 27 juin 2019, 15:58:32 (UTC+0200)] Getting webroot for domain='test3.netbio.fr'
+[jeudi 27 juin 2019, 15:58:32 (UTC+0200)] Adding txt value: pYj5cxD6Q-L47mcVk-vscYrDeDaxqcJkYy2gYLQCHys for domain:  _acme-challenge.test3.netbio.fr
+[jeudi 27 juin 2019, 15:58:32 (UTC+0200)] Using OVH endpoint: ovh-eu
+[jeudi 27 juin 2019, 15:58:32 (UTC+0200)] Checking authentication
+[jeudi 27 juin 2019, 15:58:33 (UTC+0200)] Consumer key is ok.
+[jeudi 27 juin 2019, 15:58:33 (UTC+0200)] Adding record
+[jeudi 27 juin 2019, 15:58:34 (UTC+0200)] Added, sleep 10 seconds.
+[jeudi 27 juin 2019, 15:58:45 (UTC+0200)] The txt record is added: Success.
+[jeudi 27 juin 2019, 15:58:45 (UTC+0200)] Let's check each dns records now. Sleep 20 seconds first.
+[jeudi 27 juin 2019, 15:59:06 (UTC+0200)] Checking test3.netbio.fr for _acme-challenge.test3.netbio.fr
+[jeudi 27 juin 2019, 15:59:06 (UTC+0200)] Domain test3.netbio.fr '_acme-challenge.test3.netbio.fr' success.
+[jeudi 27 juin 2019, 15:59:06 (UTC+0200)] All success, let's return
+[jeudi 27 juin 2019, 15:59:06 (UTC+0200)] Verifying: test3.netbio.fr
+[jeudi 27 juin 2019, 15:59:09 (UTC+0200)] Success
+[jeudi 27 juin 2019, 15:59:09 (UTC+0200)] Removing DNS records.
+[jeudi 27 juin 2019, 15:59:09 (UTC+0200)] Removing txt: pYj5cxD6Q-L47mcVk-vscYrDeDaxqcJkYy2gYLQCHys for domain: _acme-challenge.test3.netbio.fr
+[jeudi 27 juin 2019, 15:59:09 (UTC+0200)] Using OVH endpoint: ovh-eu
+[jeudi 27 juin 2019, 15:59:09 (UTC+0200)] Checking authentication
+[jeudi 27 juin 2019, 15:59:09 (UTC+0200)] Consumer key is ok.
+[jeudi 27 juin 2019, 15:59:10 (UTC+0200)] Removed: Success
+[jeudi 27 juin 2019, 15:59:10 (UTC+0200)] Verify finished, start to sign.
+[jeudi 27 juin 2019, 15:59:10 (UTC+0200)] Lets finalize the order, Le_OrderFinalize: https://acme-v02.api.letsencrypt.org/acme/finalize/60110928/627238993
+[jeudi 27 juin 2019, 15:59:11 (UTC+0200)] Download cert, Le_LinkCert: https://acme-v02.api.letsencrypt.org/acme/cert/032ba7b01a84ab87116d1f235bf82ec45eff
+[jeudi 27 juin 2019, 15:59:11 (UTC+0200)] Cert success.
+-----BEGIN CERTIFICATE-----
+MIIFVzCCBD+gAwIBAgISAyunsBqEq4cRbR8jW/guxF7/MA0GCSqGSIb3DQEBCwUA
+MEoxCzAJBgNVBAYTAlVTMRYwFAYDVQQKEw1MZXQncyBFbmNyeXB0MSMwIQYDVQQD
+ExpMZXQncyBFbmNyeXB0IEF1dGhvcml0eSBYMzAeFw0xOTA2MjcxMjU4NTFaFw0x
+OTA5MjUxMjU4NTFaMBoxGDAWBgNVBAMTD3Rlc3QzLm5ldGJpby5mcjCCASIwDQYJ
+KoZIhvcNAQEBBQADggEPADCCAQoCggEBAMqCsocVsEDAFSX/7QgO38xoplba+N+b
+XW9PPwzisOMLGW4qhzqGxD45l5Sfl0dYm07CLewiyvmdmrDbjo3G3judtMys6Iu9
+YqwvsugY7LJh816gDh+XDdgGO8bhlD1Uu58EXzHcq/4DsdcZ1/6gY67+l+bt7sIp
+JCIO/va/Ro6qdJbgk1ssJEiP0nDQpm0vsaG8AhLhJOsI3rQM8q6A96fxMxXyug3U
+FShqg93gZWhZbzlODHz5S+6REQj5S24s9DZKB7U6xsxdIosxoeczmOwj9kw+CBQr
+0evWlWaGIyofFp0qUtRtJsFn4P6Rcj9dmb6jjnZwMevD4HpuyuCgvBcCAwEAAaOC
+AmUwggJhMA4GA1UdDwEB/wQEAwIFoDAdBgNVHSUEFjAUBggrBgEFBQcDAQYIKwYB
+BQUHAwIwDAYDVR0TAQH/BAIwADAdBgNVHQ4EFgQUn3lcMXHcj9wGoRP2SXo11opH
+XCkwHwYDVR0jBBgwFoAUqEpqYwR93brm0Tm3pkVl7/Oo7KEwbwYIKwYBBQUHAQEE
+YzBhMC4GCCsGAQUFBzABhiJodHRwOi8vb2NzcC5pbnQteDMubGV0c2VuY3J5cHQu
+b3JnMC8GCCsGAQUFBzAChiNodHRwOi8vY2VydC5pbnQteDMubGV0c2VuY3J5cHQu
+b3JnLzAaBgNVHREEEzARgg90ZXN0My5uZXRiaW8uZnIwTAYDVR0gBEUwQzAIBgZn
+gQwBAgEwNwYLKwYBBAGC3xMBAQEwKDAmBggrBgEFBQcCARYaaHR0cDovL2Nwcy5s
+ZXRzZW5jcnlwdC5vcmcwggEFBgorBgEEAdZ5AgQCBIH2BIHzAPEAdgB0ftqDMa0z
+EJEhnM4lT0Jwwr/9XkIgCMY3NXnmEHvMVgAAAWuZO1j2AAAEAwBHMEUCIHmybaSq
+fmbWEZG8SeezziZwqjXTK9wj8nGjGXs1nhz7AiEAw7iHCoDtOVTeHI4dIuajwSZf
+tRIAG3ltaaHAQqN4JJQAdwBj8tvN6DvMLM8LcoQnV2szpI1hd4+9daY4scdoVEvY
+jQAAAWuZO1kZAAAEAwBIMEYCIQCc6+2pNGyxXBEC2WmFJeJFAfd4dllkxL1s2+JL
+WH9QXgIhAM/SbGAVB1wOUhrLC3QWsO+uapeGtQpy5G+l985wE2AmMA0GCSqGSIb3
+DQEBCwUAA4IBAQAa3Kqy8aEQT9ckIzNsbHOjmYE1OWM+mR/3Fr2nkX0Kfbe85dzZ
+cETAKHOrdQCArWacdz3IdVnweHhJ4eFXdCiWAQqfJM9VgqnFJAdTQjY8c0PAqZAF
+BOrow0U6IUQ8j4ehVOLAsxuoMqfZ+yOhyDhsR0bEqtltIXvR82lZANLVIAzrcPXk
+55Ob0Q3DBWC3IFAHjnVmylaqBp84l5VOff3uI6n9o2FDhz61FOw5y8LkANanhJ4E
+QjKeHpe3YjcjJqJ20ga87Q3iLXL1qEXfx8h1KOBNqo2ENSuGHI75Oi5Tih05MvcO
+RkjKYINzxAoRM4IIicGTTKgLmgPID9N5X7Jf
+-----END CERTIFICATE-----
+[jeudi 27 juin 2019, 15:59:11 (UTC+0200)] Your cert is in  /etc/acme/certs/test3.netbio.fr/test3.netbio.fr.cer 
+[jeudi 27 juin 2019, 15:59:11 (UTC+0200)] Your cert key is in  /etc/acme/certs/test3.netbio.fr/test3.netbio.fr.key 
+[jeudi 27 juin 2019, 15:59:11 (UTC+0200)] The intermediate CA cert is in  /etc/acme/certs/test3.netbio.fr/ca.cer 
+[jeudi 27 juin 2019, 15:59:11 (UTC+0200)] And the full chain certs is there:  /etc/acme/certs/test3.netbio.fr/fullchain.cer 
+[jeudi 27 juin 2019, 15:59:11 (UTC+0200)] - UPDATE - MESSAGE - rs11domu010 - Certificate test3.netbio.fr has been created. \nValidity period:\nnotBefore=Jun 27 12:58:51 2019 GMT notAfter=Sep 25 12:58:51 2019 GMT
+[jeudi 27 juin 2019, 15:59:12 (UTC+0200)] - UPDATE - MESSAGE - domu240 - Wait 2 s for mail sorting in MUA.
+
+#######################################################
+
+ #####  ####### #     # #######  #####    ###   #     #
+#     # #       ##    # #       #     #    #     #   #
+#       #       # #   # #       #          #      # #
+#  #### #####   #  #  # #####    #####     #       #
+#     # #       #   # # #             #    #      # #
+#     # #       #    ## #       #     #    #     #   #
+ #####  ####### #     # #######  #####    ###   #     #
+
+  SP-64-S Xeon E5 1620v2 4c/8t 3.9GHz 64Go ECC 2x2To
+ 
+             OVH RBX5 Genesix (v2) domu010
+
+#######################################################
+
+
+#######################################################
+
+ #####  ####### #     # #######  #####    ###   #     #
+#     # #       ##    # #       #     #    #     #   #
+#       #       # #   # #       #          #      # #
+#  #### #####   #  #  # #####    #####     #       #
+#     # #       #   # # #             #    #      # #
+#     # #       #    ## #       #     #    #     #   #
+ #####  ####### #     # #######  #####    ###   #     #
+
+  SP-64-S Xeon E5 1620v2 4c/8t 3.9GHz 64Go ECC 2x2To
+ 
+             OVH RBX5 Genesix (v2) domu010
+
+#######################################################
+
+[jeudi 27 juin 2019, 15:59:14 (UTC+0200)] - UPDATE - MESSAGE - rs11domu010 - Certificate test3.netbio.fr has been successfuly copied. Host is now tagged to service reload.
+[jeudi 27 juin 2019, 15:59:14 (UTC+0200)] - UPDATE - MESSAGE - domu240 - Wait 2 s for mail sorting in MUA.
+[jeudi 27 juin 2019, 15:59:16 (UTC+0200)] - UPDATE - MESSAGE - rs11domu010 - Domain test3.netbio.fr has been tagged CREATED. Success
+[jeudi 27 juin 2019, 15:59:16 (UTC+0200)] - UPDATE - MESSAGE - domu240 - Wait 2 s for mail sorting in MUA.
+
+#######################################################
+
+ #####  ####### #     # #######  #####    ###   #     #
+#     # #       ##    # #       #     #    #     #   #
+#       #       # #   # #       #          #      # #
+#  #### #####   #  #  # #####    #####     #       #
+#     # #       #   # # #             #    #      # #
+#     # #       #    ## #       #     #    #     #   #
+ #####  ####### #     # #######  #####    ###   #     #
+
+  SP-64-S Xeon E5 1620v2 4c/8t 3.9GHz 64Go ECC 2x2To
+ 
+             OVH RBX5 Genesix (v2) domu010
+
+#######################################################
+
+[jeudi 27 juin 2019, 15:59:18 (UTC+0200)] - UPDATE - MESSAGE - rs11domu010 - Service has been reloaded. Success
+[jeudi 27 juin 2019, 15:59:18 (UTC+0200)] - UPDATE - MESSAGE - domu240 - Wait 2 s for mail sorting in MUA.
+[jeudi 27 juin 2019, 15:59:20 (UTC+0200)] - UPDATE - ERROR - OD - File /etc/acme//myaccount.conf not found. Error
+[jeudi 27 juin 2019, 15:59:20 (UTC+0200)] - UPDATE - MESSAGE - domu240 - Wait 2 s for mail sorting in MUA.
+
+

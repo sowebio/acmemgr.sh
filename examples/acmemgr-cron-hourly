@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+# Place this file in /etc/cron.hourly 
+acmemgr.sh --update
