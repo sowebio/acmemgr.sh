@@ -4,68 +4,68 @@ Quick link table
 <!-- MarkdownTOC -->
 
 - [ACMEMGR.SH](#acmemgrsh)
-&nbsp;- [Introduction](#introduction)
-&nbsp;- [Purpose](#purpose)
-&nbsp;- [Features](#features)
-&nbsp;- [Architecture \(big view\)](#architecture-big-view)
-&nbsp;- [Architecture \(modular view\)](#architecture-modular-view)
-&nbsp;- [Requirements](#requirements)
-&nbsp;- [Download](#download)
-&nbsp;- [Install](#install)
-&nbsp;&nbsp;- [Base install, for one or many DNS-01 accounts.](#base-install-for-one-or-many-dns-01-accounts)
-&nbsp;&nbsp;- [Populating the domains names database](#populating-the-domains-names-database)
-&nbsp;- [Setting up one DNS-01 account](#setting-up-one-dns-01-account)
-&nbsp;&nbsp;- [Create account structure](#create-account-structure)
-&nbsp;&nbsp;- [Filling the account keys and secret](#filling-the-account-keys-and-secret)
-&nbsp;&nbsp;- [Rotate log](#rotate-log)
-&nbsp;- [Setting up one host](#setting-up-one-host)
-&nbsp;&nbsp;- [HOST_NAME.certops](#host_namecertops)
-&nbsp;&nbsp;- [HOST_NAME.reload](#host_namereload)
-&nbsp;- [Basic use](#basic-use)
-&nbsp;&nbsp;- [Command line](#command-line)
-&nbsp;&nbsp;- [Return codes](#return-codes)
-&nbsp;&nbsp;- [Using --create](#using---create)
-&nbsp;&nbsp;- [Using --renew](#using---renew)
-&nbsp;&nbsp;- [Using --update](#using---update)
-&nbsp;&nbsp;- [Using --copy](#using---copy)
-&nbsp;&nbsp;- [Using --delete](#using---delete)
-&nbsp;&nbsp;- [Using --status](#using---status)
-&nbsp;&nbsp;- [Using --verbose](#using---verbose)
-&nbsp;- [High level use](#high-level-use)
-&nbsp;&nbsp;- [Batch mode](#batch-mode)
-&nbsp;&nbsp;- [Create a certificate](#create-a-certificate)
-&nbsp;&nbsp;- [Delete a certificate](#delete-a-certificate)
-&nbsp;- [Real world workflow](#real-world-workflow)
-&nbsp;&nbsp;- [Good practises](#good-practises)
-&nbsp;- [Multi-accounts tree example](#multi-accounts-tree-example)
-&nbsp;- [Build Instructions](#build-instructions)
-&nbsp;&nbsp;- [Software](#software)
-&nbsp;&nbsp;- [Documentation](#documentation)
-&nbsp;- [Releases log](#releases-log)
-&nbsp;&nbsp;- [Authors & Contributors](#authors--contributors)
-&nbsp;- [Miscellaneous](#miscellaneous)
-&nbsp;&nbsp;- [Localization](#localization)
-&nbsp;&nbsp;- [Known bugs](#known-bugs)
-&nbsp;&nbsp;- [Roadmap](#roadmap)
-&nbsp;&nbsp;- [Contact](#contact)
-&nbsp;&nbsp;- [Licence](#licence)
+  - [Introduction](#introduction)
+  - [Purpose](#purpose)
+  - [Features](#features)
+  - [Architecture \(big view\)](#architecture-big-view)
+  - [Architecture \(modular view\)](#architecture-modular-view)
+  - [Requirements](#requirements)
+  - [Download](#download)
+  - [Install](#install)
+    - [Base install, for one or many DNS-01 accounts.](#base-install-for-one-or-many-dns-01-accounts)
+    - [Populating the domains names database](#populating-the-domains-names-database)
+  - [Setting up one DNS-01 account](#setting-up-one-dns-01-account)
+    - [Create account structure](#create-account-structure)
+    - [Filling the account keys and secret](#filling-the-account-keys-and-secret)
+    - [Rotate log](#rotate-log)
+  - [Setting up one host](#setting-up-one-host)
+    - [HOST_NAME.certops](#host_namecertops)
+    - [HOST_NAME.reload](#host_namereload)
+  - [Basic use](#basic-use)
+    - [Command line](#command-line)
+    - [Return codes](#return-codes)
+    - [Using --create](#using---create)
+    - [Using --renew](#using---renew)
+    - [Using --update](#using---update)
+    - [Using --copy](#using---copy)
+    - [Using --delete](#using---delete)
+    - [Using --status](#using---status)
+    - [Using --verbose](#using---verbose)
+  - [High level use](#high-level-use)
+    - [Batch mode](#batch-mode)
+    - [Create a certificate](#create-a-certificate)
+    - [Delete a certificate](#delete-a-certificate)
+  - [Real world workflow](#real-world-workflow)
+    - [Good practises](#good-practises)
+  - [Multi-accounts tree example](#multi-accounts-tree-example)
+  - [Build Instructions](#build-instructions)
+    - [Software](#software)
+    - [Documentation](#documentation)
+  - [Releases log](#releases-log)
+    - [Authors & Contributors](#authors--contributors)
+  - [Miscellaneous](#miscellaneous)
+    - [Localization](#localization)
+    - [Known bugs](#known-bugs)
+    - [Roadmap](#roadmap)
+    - [Contact](#contact)
+    - [Licence](#licence)
 - [APPENDICES](#appendices)
-&nbsp;- [When something going wrong](#when-something-going-wrong)
-&nbsp;- [Let's Encrypt certificate files](#lets-encrypt-certificate-files)
-&nbsp;- [Let's Encrypt certificate .conf format](#lets-encrypt-certificate-conf-format)
-&nbsp;- [Nginx reloading](#nginx-reloading)
-&nbsp;&nbsp;- [Check your system](#check-your-system)
-&nbsp;&nbsp;- [Check ExecReload property](#check-execreload-property)
-&nbsp;- [Glossary](#glossary)
-&nbsp;- [Test set](#test-set)
-&nbsp;&nbsp;- [Test 01 - Run the program without arguments](#test-01---run-the-program-without-arguments)
-&nbsp;&nbsp;- [Test 02 - Check the status listing](#test-02---check-the-status-listing)
-&nbsp;&nbsp;- [Test 03 - Check the verbose listing](#test-03---check-the-verbose-listing)
-&nbsp;&nbsp;- [Test 04 - Create one new domain certificate](#test-04---create-one-new-domain-certificate)
-&nbsp;&nbsp;- [Test 05 - Delete one domain certificate](#test-05---delete-one-domain-certificate)
-&nbsp;&nbsp;- [Test 06 - Create three new domains certificates and delete three others](#test-06---create-three-new-domains-certificates-and-delete-three-others)
-&nbsp;&nbsp;- [Test 07 - Check acmemgr.updates](#test-07---check-acmemgrupdates)
-&nbsp;&nbsp;- [Test 08 - Check acmemgr.renew](#test-08---check-acmemgrrenew)
+  - [When something going wrong](#when-something-going-wrong)
+  - [Let's Encrypt certificate files](#lets-encrypt-certificate-files)
+  - [Let's Encrypt certificate .conf format](#lets-encrypt-certificate-conf-format)
+  - [Nginx reloading](#nginx-reloading)
+    - [Check your system](#check-your-system)
+    - [Check ExecReload property](#check-execreload-property)
+  - [Glossary](#glossary)
+  - [Test set](#test-set)
+    - [Test 01 - Run the program without arguments](#test-01---run-the-program-without-arguments)
+    - [Test 02 - Check the status listing](#test-02---check-the-status-listing)
+    - [Test 03 - Check the verbose listing](#test-03---check-the-verbose-listing)
+    - [Test 04 - Create one new domain certificate](#test-04---create-one-new-domain-certificate)
+    - [Test 05 - Delete one domain certificate](#test-05---delete-one-domain-certificate)
+    - [Test 06 - Create three new domains certificates and delete three others](#test-06---create-three-new-domains-certificates-and-delete-three-others)
+    - [Test 07 - Check acmemgr.updates](#test-07---check-acmemgrupdates)
+    - [Test 08 - Check acmemgr.renew](#test-08---check-acmemgrrenew)
 
 <!-- /MarkdownTOC -->
 
@@ -74,15 +74,15 @@ Quick link table
 
 ## Introduction
 
-**acmemgr.sh** is an **acme.sh** manager for **unlimited** CERTS, TLS services, hosts and DNS-01 accounts from domains names providers.
+**`acmemgr.sh`** is an **`acme.sh`** manager for **unlimited** CERTS, TLS services, hosts and DNS-01 accounts from domains names providers.
 
-**acmemgr.sh** is designed to be at the sides of [https://github.com/Neilpang/acme.sh](https://github.com/Neilpang/acme.sh), the most valuable V1 and V2 protocol compliant ACME client ever written for [https://letsencrypt.org](https://letsencrypt.org), the sole free, automated, and open certificate authority brought to you by the non-profit Internet Security Research Group (ISRG).
+**`acmemgr.sh`** is designed to be at the sides of [https://github.com/Neilpang/acme.sh](https://github.com/Neilpang/acme.sh), the most valuable V1 and V2 protocol compliant ACME client ever written for [https://letsencrypt.org](https://letsencrypt.org), the sole free, automated, and open certificate authority brought to you by the non-profit Internet Security Research Group (ISRG).
 
-**acmemgr.sh**, as its companion and model **acme.sh**, is "written purely in Shell (Unix shell) language" as pointed out by **Neilpang** the **acme.sh** author himself : no dependency at all (as we can't seriously consider a shell script interpreter as a dependence in a Unix system).
+**`acmemgr.sh`**, as its companion and model **`acme.sh`**, is "written purely in Shell (Unix shell) language" as pointed out by **`Neilpang`** the **`acme.sh`** author himself : no dependency at all (as we can't seriously consider a shell script interpreter as a dependence in a Unix system).
 
-**acmemgr.sh** manage :
+**`acmemgr.sh`** manage:
 
-- **N domains certificates** (through **acme.sh** and **Let's Encrypt** service);
+- **N domains certificates** (through **`acme.sh`** and [**Let's Encrypt** service](https://letsencrypt.org/));
 - on **N https services** (web or email or whatever - **childs scripts configurable**);
 - on **N hosts** (dedicated or virtuals);
 - with **N DNS-01 accounts** (even from **different hosting services**). 
@@ -97,21 +97,21 @@ At first glance, HTTP-01 seems the simplest, but this feeling is misleading. DNS
 
 DNS-01 also opens other doors, such as the ability to create certificates even before the creation of the service (website, mail server, etc...).
 
-On the other side, **acme.sh** is a swiss knife at its best. It knows how to do simply everything. Compatible with ACME V1 and V2 protocol, it manages not only HTTP-01 and DNS-01, but also usual web servers like Apache or Nginx, pre and post-processing scripts, certificate lists, etc ...
+On the other side, **`acme.sh`** is a swiss knife at its best. It knows how to do simply everything. Compatible with ACME V1 and V2 protocol, it manages not only HTTP-01 and DNS-01, but also usual web servers like Apache or Nginx, pre and post-processing scripts, certificate lists, etc ...
 
-However, it seems that in the case of a somewhat serious and / or heterogeneous infrastructure, it would certainly be more efficient to leave **acme.sh** what it does best (dealing with Let's Encrypt) and delegate the higher level, that is to say, the management of certificates for your infrastructure, to another program.
+However, it seems that in the case of a somewhat serious and / or heterogeneous infrastructure, it would certainly be more efficient to leave **`acme.sh`** what it does best (dealing with Let's Encrypt) and delegate the higher level, that is to say, the management of certificates for your infrastructure, to another program.
 
-This approach is compliant with the spirit of Unix systems: a single feature for a single program. This is why **acmemgr.sh** is proposed. 
+This approach is compliant with the spirit of Unix systems: a single feature for a single program. This is why **`acmemgr.sh`** is proposed. 
 
 Because we need multi-accounts DNS provider, among many other things.
 
-Once installed, thanks to **acmemgr.sh**, the management of hundreds of certificates, servers and other DNS providers, in a multi-accounts environment, is simply managed by a single list, in a single file.
+Once installed, thanks to **`acmemgr.sh`**, the management of hundreds of certificates, servers and other DNS providers, in a multi-accounts environment, is simply managed by a single list, in a single file.
 
-The creation, deletion and renewal of certificates, but also their propagation and deletion on remote servers, as well as the sending of service emails and logs: everything is managed transparently by acmemgr.sh!
+The creation, deletion and renewal of certificates, but also their propagation and deletion on remote servers, as well as the sending of service emails and logs: everything is managed transparently by `acmemgr.sh`!
 
 To create a certificate: create a line in the list.
 
-To delete a certificate, add "DELETING" at the end of this line.
+To delete a certificate, add "`DELETING`" at the end of this line.
 
 There is noting else to do. 
 
@@ -121,29 +121,29 @@ The management of this file can even be delegated to an interactive program as p
 
 ## Features
 
-Main :
+### Main:
 
-- Handle wild certificates (like *.domain.tld);
-- When creating certificate which starts with "www." (like "www.domain.tld"), automatically adds the domain name "domain.tld" in certificate;
+- Handle wild certificates (like `*.example.com`);
+- When creating certificate which starts with "`www.`" (like "`www.example.com`"), automatically adds the domain name "example.com" in certificate;
 - Certificate request for renewal is done only when the current certificate is only valid for one month; 
 - The certificates operations (copy and delete) to distant hosts operations are fully customizable;
 - The service linked to the certificate (web or email or whatever) is reloaded only when the certificate is successfully created, renewed or deleted (no reload for no reason);
 - More, the service is restarted only once, even there are more than one  updated certificate linked to the service (one reload only for N certificates depending of the same service on the same host);
 - The reload or restart of the service after certificate update is fully customizable;
-- When **acmemgr.sh** is renamed acmemgr.renew, it behaves as if it was started with the --renew parameter and could be placed directly in /etc/cron.daily|weekly
-- When **acmemgr.sh** is renamed acmemgr.update, it behaves as if it was started with both --create and --delete argument and could be placed directly in /etc/cron.hourly 
+- When **`acmemgr.sh`** is renamed acmemgr.renew, it behaves as if it was started with the `--renew` parameter and could be placed directly in `/etc/cron.daily|weekly`
+- When **`acmemgr.sh`** is renamed acmemgr.update, it behaves as if it was started with both `--create` and `--delete` arguments and could be placed directly in `/etc/cron.hourly`
 - Don't need sudo/root.
 
-Coding style :
+Coding style:
 
 - Defensive programming in mind with consistent logging and mailing messages;
 - Extensive checks before remotely erase certificates declared to be deleted. No use of recursive remove for safety.
 
 ## Architecture (big view) 
 
-This a a simplified view how **acmemgr.sh** works.
+This a a simplified view how **`acmemgr.sh`** works.
 
-All the management is done in a centralized CERTIFICATE DISTRIBUTION SERVER :
+All the management is done in a centralized CERTIFICATE DISTRIBUTION SERVER:
 
 - Only one host to manage a pool of registrars, hosts and domains names;
 - Simple, modulat and understandable architecture;
@@ -153,17 +153,17 @@ All the management is done in a centralized CERTIFICATE DISTRIBUTION SERVER :
 
 ## Architecture (modular view)
 
-This a modular view how **acmemgr.sh** works. 
+This a modular view how **`acmemgr.sh`** works. 
 
-The CERTIFICATE DISTRIBUTION SERVER host only :
+The CERTIFICATE DISTRIBUTION SERVER host only:
 
-- Two scripts : acme.sh and acmemgr.sh;
-- One database file, acmemgr.db, in a comma delimited text format;
+- Two scripts : `acme.sh` and `acmemgr.sh`;
+- One database file, `acmemgr.db`, in a comma delimited text format;
 - One directory holding all certificates;
 - As many subdirectories as registrars DNS-01 accounts;
 - As many customizable scripts as needed to reload services and copy certificates.
 
-For a more detailed view at the file level, see below the "Multi-accounts tree example" section.
+For a more detailed view at the file level, see below the "[Multi-accounts tree example](#multi-accounts-tree-example)" section.
 
 ![Modular view](./doc/acmemgr.fig2.png)
 
@@ -180,16 +180,20 @@ For a more detailed view at the file level, see below the "Multi-accounts tree e
 
 ## Install
 
-### Base install, for one or many DNS-01 accounts.
+<h3>Base install, for one or many DNS-01 accounts.</h3>
 
-To ease the beginning of the setup, you may use a pre-install script...
+To ease the beginning of the setup, you may use a pre-install script…
 
+```sh
+sudo --login
+
+git clone https://github.com/Sowebio/acmemgr.sh.git
+cd ./acmemgr.sh
+./install.sh
 ```
-root@system: cd /root
-root@system: git clone https://github.com/Sowebio/acmemgr.sh.git
-root@system: cd ./acmemgr.sh
-root@system: ./install.sh
 
+Output:
+```
 Clonage dans 'acme.sh'...
 remote: Enumerating objects: 23, done.
 remote: Counting objects: 100% (23/23), done.
@@ -203,31 +207,31 @@ Copy files...
 Populate files...
 ```
 
-...or manually following the instructions below. 
+…or manually following the instructions below. 
 
-Download acme.sh, acmemgr.sh, create some directories and create and copy some files : 
+Download [`acme.sh`](https://github.com/Neilpang/acme.sh), [`acmemgr.sh`](https://github.com/Sowebio/acmemgr.sh), create some directories and create and copy some files: 
 
+```sh
+sudo --login
+
+git clone https://github.com/Neilpang/acme.sh.git
+git clone https://github.com/Sowebio/acmemgr.sh.git
+
+mkdir /etc/acme
+mkdir /var/log/acme
+
+cp /root/acme.sh/acme.sh /usr/local/bin
+cp /root/acmemgr.sh/acmemgr.sh /usr/local/bin
+cp /root/acmemgr.sh/acmemgr.db /etc/acme
+cp /root/acmemgr.sh/examples/*.certops /etc/acme
+cp /root/acmemgr.sh/examples/*.reload /etc/acme
+
+touch /etc/logrotate.d/acme
 ```
-root@system: cd /root
-root@system: git clone https://github.com/Neilpang/acme.sh.git
-root@system: git clone https://github.com/Sowebio/acmemgr.sh.git
 
-root@system: mkdir /etc/acme
-root@system: mkdir /var/log/acme
+Fill `/etc/logrotate.d/acme`:
 
-root@system: cp /root/acme.sh/acme.sh /usr/local/bin
-root@system: cp /root/acmemgr.sh/acmemgr.sh /usr/local/bin
-root@system: cp /root/acmemgr.sh/acmemgr.db /etc/acme
-root@system: cp /root/acmemgr.sh/examples/*.certops /etc/acme
-root@system: cp /root/acmemgr.sh/examples/*.reload /etc/acme
-
-root@system: touch /etc/logrotate.d/acme
-
-```
-
-Fill /etc/logrotate.d/acme :
-
-```
+```logrotate
 /var/log/acme/acmemgr.log {
   rotate 12
   monthly
@@ -239,9 +243,9 @@ Fill /etc/logrotate.d/acme :
 
 ### Populating the domains names database
 
-Fill /etc/acme/acmemgr.db :
+Fill `/etc/acme/acmemgr.db`:
 
-```
+```sh
 #-------------------------------------------------------------------------------
 # ACMEMGR.SH - an ACME.SH manager using DNS-01 issued LETSENCRYPT certificates
 #
@@ -260,7 +264,7 @@ Fill /etc/acme/acmemgr.db :
 
 # NOTICE #######################################################################
 # To benefit from the smart reload function, you must sort this list by HOST_NAME.
-# A domain name beginning by "[www.]domain.tld" gets an extra "domain.tld" in certificate.
+# A domain name beginning by "[www.]example.com" gets an extra "example.com" in certificate.
 # NOTICE #######################################################################
 
 declare -a DOMAINS_NAMES_LIST=(
@@ -294,14 +298,14 @@ declare -a DOMAINS_NAMES_LIST=(
 #-------------------------------------------------------------------------------
 ```
 
-When creating certificate which starts with "www." (like "www.domain.tld"), **acmemgr.sh** automatically adds the domain name "domain.tld" in certificate. This behaviour is useful to handle gracefully all uses cases : http://domain.tld, http://www.domain.tld, https://domain.tld, https://www.domain.tld. 
+When creating certificate which starts with "`www.`" (like "`www.example.com`"), **`acmemgr.sh`** automatically adds the domain name "`example.com`" in certificate. This behaviour is useful to handle gracefully all uses cases : `http://example.com/`, `http://www.example.com/`, `https://example.com`, `https://www.example.com`.
 
-If you reuse some existing certificates, tag them CREATED :
+If you reuse some existing certificates, tag them CREATED:
 
-```
+```sh
 # A Domain already created
 
-"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.domain1.tld;CREATED"
+"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.example.com;CREATED"
 ```
 
 ## Setting up one DNS-01 account
@@ -317,15 +321,15 @@ root@system: mkdir /etc/acme/ACCOUNT_NAME_ONE
 root@system: cp -r /root/acme/dnsapi /etc/acme/ACCOUNT_NAME_ONE
 ```
 
-Create /etc/acme/**ACCOUNT_NAME_ONE**/account.conf containing :
+Create /etc/acme/**ACCOUNT_NAME_ONE**/account.conf containing:
 
 ```
 ACCOUNT_CONF_PATH="/etc/acme/ACCOUNT_NAME_ONE/myaccount.conf"
 ```
 
-Create /etc/acme/**ACCOUNT_NAME_ONE**/myaccount.conf containing :
+Create `/etc/acme/`**`ACCOUNT_NAME_ONE`**`/myaccount.conf` containing:
 
-```
+```sh
 LOG_FILE='/var/log/acme/ACCOUNT_NAME_ONE.log'
 LOG_LEVEL=1
 
@@ -342,24 +346,24 @@ USER_AGENT='acme client'
 ACCOUNT_EMAIL='your@email.adress'
 ```
 
-Most parameters are only used by acme.sh, except for three :
+Most parameters are only used by acme.sh, except for three:
 
-- ACCOUNT_DNS01 will be used consistently by **acmemgr.sh** and acme.sh.
-- CERT_HOME will be used consistently by **acmemgr.sh** and acme.sh.
-- ACCOUNT_EMAIL will be used for two purposes: through acme.sh, Let's Encrypt will be able to sent you messages (about the near expiring certificates, for example) and **acmemgr.sh** will be able to sent you all events about yours certificates management.
+- `ACCOUNT_DNS01` will be used consistently by **`acmemgr.sh`** and `acme.sh`.
+- `CERT_HOME` will be used consistently by **`acmemgr.sh`** and `acme.sh`.
+- `ACCOUNT_EMAIL` will be used for two purposes: through acme.sh, Let's Encrypt will be able to sent you messages (about the near expiring certificates, for example) and **`acmemgr.sh`** will be able to sent you all events about yours certificates management.
 
-A parameter is only used by acmemgr.sh :
+A parameter is only used by `acmemgr.sh`:
 
-- EMAIL_EVEN_NOT_RENEWED set to 1 send an email to confirm that renewing has been tested but not mandatory yet.
+- `EMAIL_EVEN_NOT_RENEWED` set to `1` send an email to confirm that renewing has been tested but not mandatory yet.
 
 
 ### Filling the account keys and secret
 
-Assuming your **first** DNS-01 account is hosted at **OVH** and you obtained **AK-KEY**, **AS-SECRET** and **CK-KEY** from your OVH personal web page account.
+Assuming your **first** DNS-01 account is hosted at [**OVH**](https://ovh.com) and you obtained **`AK-KEY`**, **`AS-SECRET`** and **`CK-KEY`** from your OVH personal web page account.
 
-Update the beginning of /etc/acme/**ACCOUNT_NAME_ONE**/dnsapi/**dns_ovh.sh**.
+Update the beginning of `/etc/acme/`**`ACCOUNT_NAME_ONE`**`/dnsapi/`**`dns_ovh.sh`**.
 
-```
+```sh
 # Application Key
 OVH_AK="AK-KEY"
 # Application Secret
@@ -374,7 +378,7 @@ OVH_END_POINT=ovh-eu -- Choose the best location for you
 
 ### Rotate log
 
-Update /etc.logrotate.d/acme :
+Update `/etc.logrotate.d/acme`:
 
 ```
 /var/log/acme/ACCOUNT_NAME_ONE.log {
@@ -397,20 +401,21 @@ Update /etc.logrotate.d/acme :
 
 ## Setting up one host
 
-acmemgr.sh is designed to be used in a non limited VM numbers, which each VM hosting only one service type. 
+`acmemgr.sh` is designed to be used in a non limited VM numbers, which each VM hosting only one service type. 
 
 Mixed hosting of services like web and email servers is not recommended, as certificates pathes and ways of service reload will be certainly differents.
 
 So we can defined two customizable scripts to:
 
-- Certificates files operations (currently copy and delete), named HOST_NAME.certops;
-- Reload the certificates dependent service, named HOST_NAME.reload.
+- Certificates files operations (currently copy and delete), named `HOST_NAME.certops`;
+- Reload the certificates dependent service, named `HOST_NAME.reload`.
 
-HOST_NAME is the field HOST_NAME defined in acmemgr.db
+`HOST_NAME` is the field `HOST_NAME` defined in `acmemgr.db`
 
-### HOST_NAME.certops
+### `HOST_NAME.certops`
 
-```
+```sh
+#!/usr/bin/env bash
 #----------------------------------------------------------------------------
 # ACMEMGR.SH : an ACME.SH manager using DNS-01 issued LETSENCRYPT certificates
 #
@@ -444,9 +449,9 @@ fi
 #----------------------------------------------------------------------------
 ```
 
-### HOST_NAME.reload
+### `HOST_NAME.reload`
 
-```
+```sh
 #!/usr/bin/env bash
 #----------------------------------------------------------------------------
 # ACMEMGR.SH : an ACME.SH manager using DNS-01 issued LETSENCRYPT certificates
@@ -467,29 +472,31 @@ systemctl reload nginx
 
 ### Command line
 
-Commands (one at a time) :
+Commands (one at a time):
 
-- --create  - Create non-existent certificate (according to acmemgr.db database)
-- --renew   - Renew certificates (from a month before they expire)
-- --update  - Update certificates (create and delete according to acmemgr.db database)
-- --copy    - Distribute certificates on hosts (dedicated or virtuals)
-- --delete  - Delete certificates (according to acmemgr.db database)
-- --status  - Status of certificates (with validity dates)"
-- --verbose - Status of certificates (with last operation dates and validity dates)"
-- --help    - Command line help
+<dl>
+	<dt><code>--create</code></dt><dd>Create non-existent certificate (according to acmemgr.db database)</dd>
+	<dt><code>--renew</code></dt><dd>Renew certificates (from a month before they expire)</dd>
+	<dt><code>--update</code></dt><dd>Update certificates (create and delete according to acmemgr.db database)</dd>
+	<dt><code>--copy</code></dt><dd>Distribute certificates on hosts (dedicated or virtuals)</dd>
+	<dt><code>--delete</code></dt></dd>Delete certificates (according to acmemgr.db database)</dd>
+	<dt><code>--status</code></dt></dd>Status of certificates (with validity dates)"</dd>
+	<dt><code>--verbose</code></dt></dd>Status of certificates (with last operation dates and validity dates)"</dd>
+	<dt><code>--help</code></dt></dd>Command line help</dd>
+</dl>
 
 ### Return codes
 
-- 0 - No fatal error, read acmemgr.log for process related errors
-- 1 - Command error
-- 2 - Domains names datase acmemgr.db not found.
-- 3 - File /etc/acme/ACCOUNT_NAME/myaccount.conf not found.
-- 4 - File /etc/acme/HOST_NAME.certops not found.
-- 5 - File /etc/acme/HOST_NAME.reload not found.
+- `0` - No fatal error, read acmemgr.log for process related errors
+- `1` - Command error
+- `2` - Domains names datase `acmemgr.db` not found.
+- `3` - File `/etc/acme/ACCOUNT_NAME/myaccount.conf` not found.
+- `4` - File `/etc/acme/HOST_NAME.certops` not found.
+- `5` - File `/etc/acme/HOST_NAME.reload` not found.
 
-### Using --create
+### Using `--create`
 
-Create untagged Certificates in acmemgr.db.
+Create untagged Certificates in `acmemgr.db`.
 
 Check if the certificate does not exist.
 
@@ -497,29 +504,29 @@ Create certificate, through Let's Encrypt.
 
 Copy to distant host the certificates present in acmemgr.db and nonexistent in the certificates directory.
 
-Tag domain(s) name(s) in acmemgr.db as "CREATED - with date and time".
+Tag domain(s) name(s) in a`cmemgr.db` as "`CREATED` - with date and time".
 
 Log and send mail (info or error).
 
-### Using --renew
+### Using `--renew`
 
-Renew Certificates tagged "CREATED" or "RENEWED" in acmemgr.db.
+Renew Certificates tagged "`CREATED`" or "`RENEWED`" in `acmemgr.db`.
 
 Check if the certificate already exists.
 
 Renew certificates, through Let's Encrypt, only when they are two months old.
 
-Tag domain(s) name(s) in acmemgr.db as "RENEWED - with date and time".
+Tag domain(s) name(s) in acmemgr.db as "`RENEWED` - with date and time".
 
 Log and send mail (info or error).
 
-### Using --update
+### Using `--update`
 
 Create and delete certificates in one pass.
 
-See --create and --delete paragraphs for further information.
+See [`--create`](#using---create) and [`--delete`](#using---delete) paragraphs for further information.
 
-### Using --copy
+### Using `--copy`
 
 Check if the certificate already exists.
 
@@ -527,9 +534,9 @@ Copy certificates files to distant hosts.
 
 Log and send mail (info or error).
 
-### Using --delete
+### Using `--delete`
 
-Delete Certificates tagged "DELETING" in acmemgr.db.
+Delete Certificates tagged "`DELETING`" in `acmemgr.db`.
 
 Check if the certificate already exists.
 
@@ -537,11 +544,11 @@ Revoke certificate through Let's Encrypt.
 
 Delete certificates files on remote host.
 
-Tag domain(s) name(s) in acmemgr.db as "DELETED - with date and time".
+Tag domain(s) name(s) in `acmemgr.db` as "`DELETED` - with date and time".
 
 Log and send mail (info or error).
 
-### Using --status
+### Using `--status`
 
 Check certificates status and validity dates.
 
@@ -549,14 +556,14 @@ Check certificates status and validity dates.
 Sowebio SARL (R) An acme.sh manager using DNS-01 protocol. Version 0.6
 Copyright    (C) Stephane Riviere 2017-2018, according to GPLv3 or greater.
 
-Certificate: w978.domain.tld             CREATION (in progress)
-Certificate: w979.domain.tld             CREATED                 notBefore=Feb 12 13:42:13 2018 GMT notAfter=May 13 13:42:13 2018 GMT 
-Certificate: w980.domain.tld             CREATED                 notBefore=Feb 12 13:25:25 2018 GMT notAfter=May 13 13:25:25 2018 GMT 
-Certificate: w980.domain.tld             DELETED 
-Certificate: w981.domain.tld             DELETED 
+Certificate: w978.example.com             CREATION (in progress)
+Certificate: w979.example.com             CREATED                 notBefore=Feb 12 13:42:13 2018 GMT notAfter=May 13 13:42:13 2018 GMT 
+Certificate: w980.example.com             CREATED                 notBefore=Feb 12 13:25:25 2018 GMT notAfter=May 13 13:25:25 2018 GMT 
+Certificate: w980.example.com             DELETED 
+Certificate: w981.example.com             DELETED 
 ```
 
-### Using --verbose
+### Using `--verbose`
 
 Check certificates status, last operation dates and validity dates.
 
@@ -564,93 +571,93 @@ Check certificates status, last operation dates and validity dates.
 Sowebio SARL (R) An acme.sh manager using DNS-01 protocol. Version 0.6
 Copyright    (C) Stephane Riviere 2017-2018, according to GPLv3 or greater.
 
-Certificate: w978.domain.tld             CREATED - lundi 12 février 2018, 17:08:44 (UTC+0100)            notBefore=Feb 12 15:08:33 2018 GMT notAfter=May 13 15:08:33 2018 GMT 
-Certificate: w979.domain.tld             CREATED - lundi 12 février 2018, 15:25:36 (UTC+0100)            notBefore=Feb 12 13:42:13 2018 GMT notAfter=May 13 13:42:13 2018 GMT 
-Certificate: w980.domain.tld             CREATED - lundi 12 février 2018, 15:25:36 (UTC+0100)            notBefore=Feb 12 13:25:25 2018 GMT notAfter=May 13 13:25:25 2018 GMT 
-Certificate: w980.domain.tld             DELETED - lundi 12 février 2018, 15:58:39 (UTC+0100)
-Certificate: w981.domain.tld             DELETED - lundi 12 février 2018, 15:59:56 (UTC+0100)
+Certificate: w978.example.com             CREATED - lundi 12 février 2018, 17:08:44 (UTC+0100)            notBefore=Feb 12 15:08:33 2018 GMT notAfter=May 13 15:08:33 2018 GMT 
+Certificate: w979.example.com             CREATED - lundi 12 février 2018, 15:25:36 (UTC+0100)            notBefore=Feb 12 13:42:13 2018 GMT notAfter=May 13 13:42:13 2018 GMT 
+Certificate: w980.example.com             CREATED - lundi 12 février 2018, 15:25:36 (UTC+0100)            notBefore=Feb 12 13:25:25 2018 GMT notAfter=May 13 13:25:25 2018 GMT 
+Certificate: w980.example.com             DELETED - lundi 12 février 2018, 15:58:39 (UTC+0100)
+Certificate: w981.example.com             DELETED - lundi 12 février 2018, 15:59:56 (UTC+0100)
 ```
 
 ## High level use
 
-Once installed and set, this is the way to use **acmemgr.sh** on a day by day basis.
+Once installed and set, this is the way to use **`acmemgr.sh`** on a day by day basis.
 
 ### Batch mode
 
-When **acmemgr.sh** is renamed acmemgr.renew and placed in /etc/cron.weekly : 
+When **`acmemgr.sh`** is renamed `acmemgr.renew` and placed in `/etc/cron.weekly`: 
 
 - Checking every week certificates renewing.
 
-When **acmemgr.sh** is renamed acmemgr.update and placed in /etc/cron.hourly : 
+When **`acmemgr.sh`** is renamed `acmemgr.update` and placed in `/etc/cron.hourly`: 
 
-- Updating certificates pool every hour by creating and deleting them according to the file acmemgr.db
+- Updating certificates pool every hour by creating and deleting them according to the file `acmemgr.db`
 
 ### Create a certificate
 
-Create a new line in acmemgr.db :
+Create a new line in `acmemgr.db`:
 
-```
-"rs11domu120;root;domu120v1;12345;ACCOUNT_NAME_THREE;www.domain5.tld"
-```
-
-One hour later max, depending of your cron, the certificate is created :
-
-```
-"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.domain1.tld;CREATED - lundi 12 fevrier 2018, 17:13:11 (UTC+0100)"
+```sh
+"rs11domu120;root;domu120v1;12345;ACCOUNT_NAME_THREE;www.example.com"
 ```
 
-Two monthes later, more or less one week, the certificated is renewed :
+One hour later max, depending of your `cron`, the certificate is created:
+
+```sh
+"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.example.com;CREATED - lundi 12 fevrier 2018, 17:13:11 (UTC+0100)"
+```
+
+Two monthes later, more or less one week, the certificated is renewed:
 
 ```
-"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.domain1.tld;RENEWED - jeudi 26 avril 2018, 18:13:11 (UTC+0100)"
+"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.example.com;RENEWED - jeudi 26 avril 2018, 18:13:11 (UTC+0100)"
 ```
 
 ### Delete a certificate
 
-Update the domain name related line :
+Update the domain name related line:
 
-```
-"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.domain1.tld;RENEWED - jeudi 26 avril 2018, 18:13:11 (UTC+0100)"
-```
-
-Replacing CREATED or RENEWED by DELETING :
-
-```
-"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.domain1.tld;DELETING - jeudi 26 avril 2018, 18:13:11 (UTC+0100)"
+```sh
+"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.example.com;RENEWED - jeudi 26 avril 2018, 18:13:11 (UTC+0100)"
 ```
 
-One hour later max, depending of your cron, the certificate is deleted :
+Replacing `CREATED` or `RENEWED` by `DELETING`:
 
+```sh
+"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.example.com;DELETING - jeudi 26 avril 2018, 18:13:11 (UTC+0100)"
 ```
-"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.domain1.tld;DELETED - jeudi 26 avril 2018, 19:13:11 (UTC+0100)"
+
+One hour later max, depending of your `cron`, the certificate is deleted:
+
+```sh
+"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_ONE;www.example.com;DELETED - jeudi 26 avril 2018, 19:13:11 (UTC+0100)"
 ```
 
 ## Real world workflow
 
 We set up two new domain names:
 
-```
-"rs11domu120;root;domu120v1;61234;ACCOUNT_NAME_THREE;www.domain9.tld"
-"rs11domu120;root;domu120v1;61234;ACCOUNT_NAME_THREE;wiki.domain9.tld"
+```sh
+"rs11domu120;root;domu120v1;61234;ACCOUNT_NAME_THREE;www.example.com"
+"rs11domu120;root;domu120v1;61234;ACCOUNT_NAME_THREE;wiki.example.com"
 ```
 
-After the cron, we get:
+After the `cron`, we get:
 
-```
-"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_THREE;www.domain9.tld;CREATED - lundi 12 fevrier 2018, 17:13:11 (UTC+0100)"
-"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_THREE;wiki.domain9.tld;CREATED - lundi 12 fevrier 2018, 17:14:31 (UTC+0100)"
+```sh
+"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_THREE;www.example.com;CREATED - lundi 12 fevrier 2018, 17:13:11 (UTC+0100)"
+"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_THREE;wiki.example.com;CREATED - lundi 12 fevrier 2018, 17:14:31 (UTC+0100)"
 ```
 
 But we change our mind and finally go for a wildcard certificate. We now tag the just created certificates as to be deleted (no need to delete the previous datetime tag) and create a new wildcard certificate: 
 
-```
-"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_THREE;www.domain9.tld;DELETING - lundi 12 fevrier 2018, 17:13:11 (UTC+0100)"
-"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_THREE;wiki.domain9.tld;DELETING - lundi 12 fevrier 2018, 17:13:11 (UTC+0100)"
-"rs11domu120;root;domu120v1;61234;ACCOUNT_NAME_THREE;*.domain9.tld"
+```sh
+"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_THREE;www.example.com;DELETING - lundi 12 fevrier 2018, 17:13:11 (UTC+0100)"
+"rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_THREE;wiki.example.com;DELETING - lundi 12 fevrier 2018, 17:13:11 (UTC+0100)"
+"rs11domu120;root;domu120v1;61234;ACCOUNT_NAME_THREE;*.example.com"
 ```
 
-One cron cycle after, we get: 
-```
+One `cron` cycle after, we get: 
+```sh
 "rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_THREE;www.domain9.tld;DELETED - lundi 12 fevrier 2018, 18:13:11 (UTC+0100)"
 "rs11domu010;root;domu010v1;12345;ACCOUNT_NAME_THREE;wiki.domain9.tld;DELETED - lundi 12 fevrier 2018, 18:13:31 (UTC+0100)"
 "rs11domu120;root;domu120v1;61234;ACCOUNT_NAME_THREE;*.domain9.tld;CREATED - lundi 12 fevrier 2018, 18:15:41 (UTC+0100)"
@@ -658,10 +665,11 @@ One cron cycle after, we get:
 
 ### Good practises
 
-To keep the file readable, you may choose, from time to time, to delete the certificates lines tagged DELETED.
+To keep the file readable, you may choose, from time to time, to delete the certificates lines tagged `DELETED`.
 
-Remember that all directories and certificates are propagated and deleted in all relevant hosts. SSL integration in seconds of 10 or 20 additional sites is no longer a problem and become a standard task. On the nginx side, standardized conf files using the include directive will also make integration easy:
-```
+Remember that all directories and certificates are propagated and deleted in all relevant hosts. SSL integration in seconds of 10 or 20 additional sites is no longer a problem and become a standard task. On the Nginx's side, standardized conf files using the include directive will also make integration easy:
+
+```sh
 #-----------------------------------------------------------------------------
 # www.soweb.io - proxy side
 #-----------------------------------------------------------------------------
@@ -685,6 +693,7 @@ error_log                /var/log/nginx/www.soweb.io.error.log;
 
 
 ## Multi-accounts tree example
+
 ```
 * Installation tree (local host)
 
@@ -738,24 +747,28 @@ N/A
 
 ### Documentation
 
-This documentation (html5 format):
-```
-root@system: pandoc README.md --css README.css -o README.html
+This documentation (HTML5 format):
+
+```sh
+pandoc README.md --css README.css -o README.html
 ```
 
 This documentation (LibreOffice format):
-```
-root@system: pandoc README.md -V geometry:margin=1cm -s -o README.html
+
+```sh
+pandoc README.md -V geometry:margin=1cm -s -o README.html
 ```
 
-Pretty-printing source (html5 format):
-```
-root@system: source-highlight --line-number --src-lang bash --out-format html5 --doc acmemgr.sh
+Pretty-printing source (HTML5 format):
+
+```sh
+source-highlight --line-number --src-lang bash --out-format html5 --doc acmemgr.sh
 ```
 
 Pretty-printing source (LibreOffice format):
-```
-root@system:source-highlight --line-number --src-lang bash --out-format odf --doc acmemgr.sh
+
+```sh
+source-highlight --line-number --src-lang bash --out-format odf --doc acmemgr.sh
 ```
 
 ## Releases log
@@ -767,7 +780,7 @@ root@system:source-highlight --line-number --src-lang bash --out-format odf --do
 - 20180209 : **0.5** - sr - Finish delete command and add updates argument
 - 20180212 : **0.6** - sr - Hardened code and extensive tests
 - 20180213 : **0.7** - sr - In production
-- 20180315 : **0.8** - sr - When creating certificate which starts with "www." (like "www.domain.tld"), acmemgr.sh automatically adds the domain name "domain.tld" in certificate. Email messages improvements: The subject of the message is more explicit and there is no need, in most cases, to open the message to read it in full. Email messages bug : a success message in renewing was tagged as an error. File example bug : in mailcow_example.certops, the destination certificates files were reversed. Documentation improvements and typos correction. Css style for html rendering has been improved.
+- 20180315 : **0.8** - sr - When creating certificate which starts with "www." (like "www.example.com"), acmemgr.sh automatically adds the domain name "example.com" in certificate. Email messages improvements: The subject of the message is more explicit and there is no need, in most cases, to open the message to read it in full. Email messages bug : a success message in renewing was tagged as an error. File example bug : in mailcow_example.certops, the destination certificates files were reversed. Documentation improvements and typos correction. Css style for html rendering has been improved.
 - 20180329 : **0.9** - sr ss - acmemgr.sh and acme.sh now share the same path to certificates. Deleting CERT_ROOT variable, which was statically defined to /etc/acme/certs in acmemgr.sh. acemmgr.sh now uses CERT_HOME, which is defined in each configuration file myaccount.conf of every DNS account. CERT_HOME is used in all acme.sh certificates operation through the --cert-home parameter. Validate wild certificates creation (which was not tested or supported): while the creation itself was successful, the update of acme mgr.db was wrong, because of the special character status of the * (star) character. Check create, renew and revoke cycle with a test wild certificate. Documentation improvements and typos correction. 
 - 20180430 : **1.0** - sr - Documentation improvements and typos correction. Add quick link table. Move to Sowebio Github account.
 - 20190701 : **1.1** - lg sr - Lots of fixes and refactors in code with ShellCheck compliance. Change shebang in acmemgr.sh, ./examples/mailcow_reload and ./examples/nginx_example.reload from #!/bin/bash to #!/usr/bin/env bash. Many documentation improvements and typos corrections.
@@ -777,9 +790,9 @@ root@system:source-highlight --line-number --src-lang bash --out-format odf --do
 
 sr : Stéphane Rivière - see below **Contact**
 
-ss : Somanos Sar - somanos(at)drumee.net : Has pointed out the inconsistencies in defining the certificates directory between amcemgr.sh and acme.sh.
+ss : Somanos Sar - somanos(at)drumee.net: Has pointed out the inconsistencies in defining the certificates directory between amcemgr.sh and acme.sh.
 
-lg : Léa Gris - lea(at)noireaude.net : Lots of fixes and refactors in code with ShellCheck compliance. New delete routines.
+lg : Léa Gris - lea(at)noireaude.net: Lots of fixes and refactors in code with ShellCheck compliance. New delete routines.
 
 ## Miscellaneous
 
@@ -809,29 +822,29 @@ Copyright (C) Stephane Riviere 2017-2019, according to GPLv3 or greater, for [ht
 
 ## When something going wrong
 
-If you already had some Let's Encrypt certificates before using acmemgr.sh. Check their .conf files to be sure that informations inside are good. Le_Webroot and Le_NextRenewTime should be consistent.
+If you already had some Let's Encrypt certificates before using `acmemgr.sh`. Check their `.conf` files to be sure that informations inside are good. `Le_Webroot` and `Le_NextRenewTime` should be consistent.
 
-Challenge error: {"type":"urn:acme:error:malformed","detail":"Expired authorization","status": 404} : Check Le_NextRenewTime or Le_NextRenewTimeStr : you're attempted to renew an obsolete certificate. 
+Challenge error: `{"type":"urn:acme:error:malformed","detail":"Expired authorization","status": 404}` : Check `Le_NextRenewTime` or `Le_NextRenewTimeStr`: you're attempted to renew an obsolete certificate. 
 
 ## Let's Encrypt certificate files
 
-|                         |DNS-01                                             |HTTP-01          |
-|:------------------------|:--------------------------------------------------|:----------------|
-|Certificate              | /etc/acme/certs/www.domain.tld/www.domain.tld.cer | cert.pem        |
-|Certificate private key  | /etc/acme/certs/www.domain.tld/www.domain.tld.key | privkey.pem     |
-|Intermediate CA cert     | /etc/acme/certs/www.domain.tld/ca.cer             | chain.pem       |
-|Full chain certs         | /etc/acme/certs/www.domain.tld/fullchain.cer      | fullchain.pem   |
-|Certificate conf         | /etc/acme/certs/www.domain.tld.conf               |                 |
-|Certificate request conf | /etc/acme/certs/www.domain.tld.csr.conf           |                 |
-|Certificate request      | /etc/acme/certs/www.domain.tld.csr                |                 |
+|                         |DNS-01                                                 |HTTP-01            |
+|:------------------------|:------------------------------------------------------|:------------------|
+|Certificate              | `/etc/acme/certs/www.example.com/www.example.com.cer` | `cert.pem`        |
+|Certificate private key  | `/etc/acme/certs/www.example.com/www.example.com.key` | `privkey.pem`     |
+|Intermediate CA cert     | `/etc/acme/certs/www.example.com/ca.cer`              | `chain.pem`       |
+|Full chain certs         | `/etc/acme/certs/www.example.com/fullchain.cer`       | `fullchain.pem`   |
+|Certificate conf         | `/etc/acme/certs/www.example.com.conf`                |                   |
+|Certificate request conf | `/etc/acme/certs/www.example.com.csr.conf`            |                   |
+|Certificate request      | `/etc/acme/certs/www.example.com.csr`                 |                   |
 
 
-## Let's Encrypt certificate .conf format
+## Let's Encrypt certificate `.conf` format
 
-This file is usually located at /etc/acme/certs/www.domain.tld
+This file is usually located at `/etc/acme/certs/www.example.com`
 
-```
-Le_Domain='www.domain.tld'
+```sh
+Le_Domain='www.example.com'
 Le_Alt='no'
 Le_Webroot='dns_ovh'
 Le_PreHook=''
@@ -847,10 +860,10 @@ Le_NextRenewTimeStr='lundi 14 mai 2018, 10:47:58 (UTC+0000)'
 Le_NextRenewTime='1526208478'
 ```
 
-Notes :
+### Notes:
 
-- If you shift the domain name from a DNS account (dns_ovh) to another (dns_freedns), you must change Le_Webroot field accordingly. i.e. change Le_Webroot='dns_ovh' to Le_Webroot='dns_freedns'
-- If you want to modify the renew date, for tests purposes, you may use https://www.epochconverter.com to adjust the Le_NextRenewTime='1526208478' field (seconds since 19700101)
+- If you shift the domain name from a DNS account (dns_ovh) to another (dns_freedns), you must change Le_Webroot field accordingly. i.e. change `Le_Webroot='dns_ovh'` to `Le_Webroot='dns_freedns'`
+- If you want to modify the renew date, for tests purposes, you may use https://www.epochconverter.com to adjust the `Le_NextRenewTime='1526208478'` field (seconds since 19700101)
 
 ## Nginx reloading
 
@@ -860,16 +873,16 @@ Information about how to handle certificates updates with Nginx without restarti
 
 If your system use systemd, chances are high that the reload nginx native command is:
 
-```
-root@system: systemctl reload nginx
+```sh
+systemctl reload nginx
 ```
 
 ### Check ExecReload property
 
 Result could slightly change across systems:
 
-```
-root@system: systemctl show nginx.service --property=ExecReload
+```sh
+systemctl show nginx.service --property=ExecReload
 
 ExecReload={ path=/usr/sbin/nginx ; argv[]=/usr/sbin/nginx -g daemon on; master_process on; -s reload ; ignore_errors=no ; start_time=[n/a] ; stop_time=[n/a] ; pid=0 ; code=(null) ; status=0/0 }
 ```
@@ -880,26 +893,28 @@ The important part is:
  -s reload ;
 ```
 
-The parameter **-s** send a signal to the master process. The argument signal can be one of: stop, quit, reopen, **reload**, according to the following table:
+The parameter **`-s`** sends a signal to the master process. The argument `signal` can be one of: `stop`, `quit`, `reopen`, **`reload`**, according to the following table:
 
- -  stop   SIGTERM
- -  quit   SIGQUIT
- -  reopen SIGUSR1
- -  **reload SIGHUP**
+| `-s` Parameter | Signal       |
+|:---------------|:-------------|
+| stop           | `SIGTERM`    |
+| quit           | `SIGQUIT`    |
+| reopen         | `SIGUSR1`    |
+| **reload **    | **`SIGHUP`** |
 
- According to http://nginx.org/en/docs/control.html, the **reload SIGHUP** signal:
+ According to http://nginx.org/en/docs/control.html, the **reload `SIGHUP`** signal:
  - changing configuration,
  - keeping up with a changed time zone (only for FreeBSD and Linux)
  - starting new worker processes with a new configuration
  - graceful shutdown of old worker processes
 
- As per http://nginx.org/docs/control.html#reconfiguration, sending the HUP signal to nginx makes sure that it performs a graceful restart, and, if the configuration files are incorrect, the whole procedure is abandoned, and you're left with the nginx as before sending the HUP signal. At no point should any downtime be possible :
+ As per http://nginx.org/docs/control.html#reconfiguration, sending the `HUP` signal to nginx makes sure that it performs a graceful restart, and, if the configuration files are incorrect, the whole procedure is abandoned, and you're left with the nginx as before sending the HUP signal. At no point should any downtime be possible :
  - The master process first checks the syntax validity, then tries to apply new configuration, that is, to open log files and new listen sockets.
  - If this fails, it rolls back changes and continues to work with old configuration.
 
 ## Glossary
 
-Some common concepts in cryptography are found around **acmemgr.sh** :
+Some common concepts in cryptography are found around **`acmemgr.sh`**:
 
 - Let's Encrypt is CEC ;
 - The Certificate Distribution Server is CDES, a part of the secure SGC. 
@@ -914,56 +929,56 @@ Some common concepts in cryptography are found around **acmemgr.sh** :
 
 ### Test 01 - Run the program without arguments
 
-- Objective : See the help screen
-- Prior action : None
-- root@system: acmemgr.sh
+- Objective: See the help screen
+- Prior action: None
+- root@system: `acmemgr.sh`
 - Result: OK
   
 ### Test 02 - Check the status listing
 
-- Objective : See status output
-- Prior action : None
-- root@system: acmemgr.sh --status
+- Objective: See status output
+- Prior action: None
+- root@system: `acmemgr.sh --status`
 - Result: OK
 
 ### Test 03 - Check the verbose listing
 
-- Objective : See verbose output
-- Prior action : None
-- root@system: acmemgr.sh --verbose
+- Objective: See verbose output
+- Prior action: None
+- root@system: `acmemgr.sh --verbose`
 - Result: OK
 
 ### Test 04 - Create one new domain certificate
 
-- Objective : Create a domain name and check certificate copy on the distant host. Check tag CREATED
-- Prior action : Fill a new domain name in acmemgr.db
-- root@system: acmemgr.sh --create
+- Objective: Create a domain name and check certificate copy on the distant host. Check tag `CREATED`
+- Prior action: Fill a new domain name in `acmemgr.db`
+- root@system: `acmemgr.sh --create`
 - Result: OK
 
 ### Test 05 - Delete one domain certificate
 
-- Objective : Delete a domain name and check certificate deletion on the distant host. Check tag DELETED at DATE - TIME replacement
-- Prior action : Tag a domain name with "DELETING" field
-- root@system: acmemgr.sh --delete
+- Objective: Delete a domain name and check certificate deletion on the distant host. Check tag `DELETED` at `DATE - TIME` replacement
+- Prior action: Tag a domain name with "`DELETING`" field
+- root@system: `acmemgr.sh --delete`
 - Result: OK
 
 ### Test 06 - Create three new domains certificates and delete three others
 
-- Objective : Check chained creations and deletions 
-- Prior action : Fill 3 new domains names and tag three others domain names for DELETING in acmemgr.db, Check tags updates.
-- root@system: acmemgr.sh --update
+- Objective: Check chained creations and deletions 
+- Prior action: Fill 3 new domains names and tag three others domain names for `DELETING` in `acmemgr.db`, Check tags updates.
+- root@system: `acmemgr.sh --update`
 - Result: OK
 
-### Test 07 - Check acmemgr.updates
+### Test 07 - Check `acmemgr.updates`
 
-- Objective : Check acmemgr.update in cron.hourly
-- Prior action : Copy acmemgr.sh to /etc/cron.houlry/acmemgr.update and fill some domains names creation, then some domains names deletion
+- Objective: Check acmemgr.update in cron.hourly
+- Prior action: Copy `acmemgr.sh` to `/etc/cron.houlry/acmemgr.update` and fill some domains names creation, then some domains names deletion
 - root@system: None
 - Result: OK
 
 ### Test 08 - Check acmemgr.renew
 
-- Objective :  Check acmemgr.renew cron.weekly
-- Prior action : Copy acmemgr.sh to /etc/cron.weekly/acmemgr.renew. Uncommented the 4 months test check (instead of 1 monts) and manually launch acmemgr.renew. Then simulate a full renew with --force acme.sh argument in command.
+- Objective:  Check `acmemgr.renew` `cron.weekly`
+- Prior action: Copy `acmemgr.sh` to `/etc/cron.weekly/acmemgr.renew`. Uncommented the 4 months test check (instead of 1 monts) and manually launch `acmemgr.renew`. Then simulate a full renew with `--force` `acme.sh` argument in command.
 - root@system: None
 - Result: OK
