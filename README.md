@@ -772,6 +772,7 @@ root@system:source-highlight --line-number --src-lang bash --out-format odf --do
 - 20180430 : **1.0** - sr - Documentation improvements and typos correction. Add quick link table. Move to Sowebio Github account.
 - 20190701 : **1.1** - lg sr - Lots of fixes and refactors in code with ShellCheck compliance. Change shebang in acmemgr.sh, ./examples/mailcow_reload and ./examples/nginx_example.reload from #!/bin/bash to #!/usr/bin/env bash. Many documentation improvements and typos corrections.
 - 20190705 : **1.2** - lg sr - Clean source. Better delete routine for local and remote certificates. Add a pre-install script utility and cron files examples. By user request, add a parameter to limit emails sending when the renewed date is compute. acmemgr.sh v1.2 has been qualified with acme.sh v2.8.2.
+- 20210901 : **1.3** - sr - Following the version 3 of acme.sh which imposes the use of ZeroSSL as default authority, acemmgr.sh forces acme.sh to continue using the Letsencrypt certificate authority. acmemgr.sh v1.3 has been qualified with acme.sh v3.0.1.
 
 ### Authors & Contributors
 

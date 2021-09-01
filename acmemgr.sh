@@ -28,8 +28,9 @@
 # Initialize
 #-------------------------------------------------------------------------------
 
+#MANAGER_DEBUG='false'
 MANAGER_DEBUG='false'
-MANAGER_VERSION='1.2'
+MANAGER_VERSION='1.3'
 MANAGER_NAME='acmemgr'
 ACME_NAME='acme'
 ACME_COMMAND="${ACME_NAME}.sh"
@@ -215,8 +216,9 @@ function create_process()
         remove_local_cert
       fi
 
-      # /usr/local/bin/acme.sh --home /etc/acme/<account_name> --config-home /etc/acme/<account_name> --cert-home <cert_home> --dns <account_dns01> --issue --domain <domain_name>
+      # /usr/local/bin/acme.sh --server letsencrypt --home /etc/acme/<account_name> --config-home /etc/acme/<account_name> --cert-home <cert_home> --dns <account_dns01> --issue --domain <domain_name>
       ACME_PARAMS=(
+        --server letsencrypt
         --home "${HOME_DIR}"
         --config-home "${HOME_DIR}"
         --cert-home "${CERT_HOME}"
@@ -405,21 +407,13 @@ function renew_process()
           "Certificate ${DOMAIN_NAME} has to be renewed." \
           "\\nValidity period:\\n${DOMAIN_CERT_EXPIRE}"
 
-        # /usr/local/bin/acme.sh --home /etc/acme/<account_name> --config-home /etc/acme/<account_name> --cert-home <cert_home> --dns <account_dns01> --renew --domain <domain_name>
+        # /usr/local/bin/acme.sh --server letsencrypt --home /etc/acme/<account_name> --config-home /etc/acme/<account_name> --cert-home <cert_home> --dns <account_dns01> --renew --domain <domain_name>
 
         # NORMAL OPERATION
-        ACME_PARAMS=(
-          --home "${HOME_DIR}"
-          --config-home "${HOME_DIR}"
-          --cert-home "${CERT_HOME}"
-          --log "${LOG_ACME_ROOT}/${ACCOUNT_NAME}.log"
-          --dns "${ACCOUNT_DNS01}"
-          --renew
-          --domain "${DOMAIN_NAME}"
-        )
+        ACME_PARAMS=(--server letsencrypt --home "${HOME_DIR}" --config-home "${HOME_DIR}" --cert-home "${CERT_HOME}" --log "${LOG_ACME_ROOT}/${ACCOUNT_NAME}.log" --dns "${ACCOUNT_DNS01}" --renew --domain "${DOMAIN_NAME}")
 
         # FORCE RENEW FOR TESTS PURPOSES
-        #ACME_PARAMS=(--home "${HOME_DIR}" --config-home "${HOME_DIR}" --cert-home "${CERT_HOME}" --log "${LOG_ACME_ROOT}/${ACCOUNT_NAME}.log" --dns "${ACCOUNT_DNS01}" --force --renew --domain "${DOMAIN_NAME}")
+        # ACME_PARAMS=(--server letsencrypt --home "${HOME_DIR}" --config-home "${HOME_DIR}" --cert-home "${CERT_HOME}" --log "${LOG_ACME_ROOT}/${ACCOUNT_NAME}.log" --dns "${ACCOUNT_DNS01}" --force --renew --domain "${DOMAIN_NAME}")
 
         #--------------------------:
         log_dbg "ACME_COMMAND      : ${ACME_COMMAND} $(
@@ -575,8 +569,9 @@ function delete_process()
 
           # Revoking is done inner because the main goal is to delete
 
-          # /usr/local/bin/acme.sh --home /etc/acme/<account_name> --config-home /etc/acme/<account_name> --cert-home <cert_home> --dns <account_dns01> --renew --domain <domain_name>
+          # /usr/local/bin/acme.sh --server letsencrypt --home /etc/acme/<account_name> --config-home /etc/acme/<account_name> --cert-home <cert_home> --dns <account_dns01> --renew --domain <domain_name>
           ACME_PARAMS=(
+            --server letsencrypt
             --home "${HOME_DIR}"
             --config-home "${HOME_DIR}"
             --cert-home "${CERT_HOME}"
